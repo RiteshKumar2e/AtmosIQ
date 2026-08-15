@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -33,43 +33,90 @@ def brics_overview(
     db: Session = Depends(get_db),
     country_code: Optional[str] = Query(default=None, max_length=2),
 ) -> BricsOverviewOut:
-    query = select(Region).order_by(Region.country_code)
+    query = select(Region).order_by(Region.country_code, Region.name)
     if country_code:
         query = query.where(Region.country_code == country_code.upper())
     regions = db.scalars(query).all()
 
-    nodes: List[BricsNode] = []
+    # BRICS is a network of national nodes, not of subdivisions. A country that
+    # deploys per state (India runs one region per state/UT) must still appear
+    # as a single node, with its regions rolled up — otherwise the network view
+    # is swamped by one member's internal geography.
+    by_country: Dict[str, List[Region]] = {}
     for region in regions:
-        stations = db.scalars(
-            select(MonitoringStation).where(
-                MonitoringStation.region_code == region.region_code
-            )
+        by_country.setdefault(region.country_code, []).append(region)
+
+    # Three grouped queries instead of three per region: with 36 Indian
+    # subdivisions the per-region version issued over a hundred round trips.
+    station_counts = dict(
+        db.execute(
+            select(MonitoringStation.region_code, func.count())
+            .group_by(MonitoringStation.region_code)
         ).all()
-        reports = db.scalars(
-            select(CitizenReport).where(CitizenReport.region_code == region.region_code)
+    )
+    report_counts = dict(
+        db.execute(
+            select(CitizenReport.region_code, func.count())
+            .group_by(CitizenReport.region_code)
         ).all()
-        hotspots = db.scalars(
-            select(Hotspot).where(
-                Hotspot.region_code == region.region_code, Hotspot.status == "ACTIVE"
-            )
-        ).all()
+    )
+    active_hotspots = db.scalars(
+        select(Hotspot).where(Hotspot.status == "ACTIVE")
+    ).all()
+
+    hotspots_by_region: Dict[str, List[Hotspot]] = {}
+    for hotspot in active_hotspots:
+        hotspots_by_region.setdefault(hotspot.region_code, []).append(hotspot)
+
+    home_region = settings.default_region_code.upper()
+
+    nodes: List[BricsNode] = []
+    for code, members in by_country.items():
+        # The configured home region represents its country; otherwise the
+        # first region alphabetically stands in.
+        primary = next(
+            (r for r in members if r.region_code.upper() == home_region), members[0]
+        )
+
+        country_hotspots = [
+            h for region in members for h in hotspots_by_region.get(region.region_code, [])
+        ]
+        stations = sum(station_counts.get(r.region_code, 0) for r in members)
+        reports = sum(report_counts.get(r.region_code, 0) for r in members)
+
+        region_name = primary.name
+        if len(members) > 1:
+            region_name = f"{primary.name} +{len(members) - 1} more"
+
+        # A country is as deployed as its most advanced region.
+        status_rank = {"ACTIVE": 0, "PILOT": 1, "PLANNED": 2}
+        node_status = min(
+            (r.node_status for r in members),
+            key=lambda value: status_rank.get(value, 99),
+        )
 
         nodes.append(
             BricsNode(
-                country_code=region.country_code,
-                country_name=region.country_name,
-                flag=region.flag,
-                region_code=region.region_code,
-                region_name=region.name,
-                node_status=region.node_status,
-                data_mode=region.data_mode,
-                population_millions=region.population_millions,
-                monitoring_stations=len(stations),
-                citizen_signals=len(reports),
-                active_hotspots=len(hotspots),
+                country_code=primary.country_code,
+                country_name=primary.country_name,
+                flag=primary.flag,
+                region_code=primary.region_code,
+                region_name=region_name,
+                node_status=node_status,
+                data_mode=primary.data_mode,
+                population_millions=round(
+                    sum(r.population_millions for r in members), 1
+                ),
+                monitoring_stations=stations,
+                citizen_signals=reports,
+                active_hotspots=len(country_hotspots),
                 avg_risk=(
-                    round(sum(h.risk_score for h in hotspots) / len(hotspots), 1)
-                    if hotspots
+                    round(
+                        sum(h.risk_score for h in country_hotspots)
+                        / len(country_hotspots),
+                        1,
+                    )
+                    if country_hotspots
                     else 0.0
                 ),
                 model_version=MODEL_VERSION,
@@ -86,7 +133,8 @@ def brics_overview(
         federation_principles=_principles(),
         interoperability_layers=_layers(),
         aggregate={
-            "member_states": len({n.country_code for n in nodes}),
+            "member_states": len(nodes),
+            "regions_deployed": len(regions),
             "deployed_nodes": sum(1 for n in nodes if n.node_status == "ACTIVE"),
             "pilot_nodes": sum(1 for n in nodes if n.node_status == "PILOT"),
             "planned_nodes": sum(1 for n in nodes if n.node_status == "PLANNED"),

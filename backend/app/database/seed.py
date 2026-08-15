@@ -172,6 +172,124 @@ CHARACTER_TO_REPORT_TYPE = {
     "agriculture": "burning",
 }
 
+# --------------------------------------------------------------------------
+# Indian states and union territories
+#
+# The home node deploys per state, so every ISO 3166-2:IN subdivision is a
+# selectable region. Delhi (IN-DL) is defined above with hand-authored
+# locations and is deliberately excluded here so its richer dataset survives.
+#
+# Coordinates are the state capital; `character` is the emission profile that
+# dominates that state's airshed and drives the report types generated for it.
+# --------------------------------------------------------------------------
+# (code, name, capital, lat, lon, population_millions, character)
+INDIA_SUBDIVISIONS: List[Tuple[str, str, str, float, float, float, str]] = [
+    # --- States ---
+    ("IN-AP", "Andhra Pradesh", "Amaravati", 16.5062, 80.6480, 53.9, "industrial"),
+    ("IN-AR", "Arunachal Pradesh", "Itanagar", 27.0844, 93.6053, 1.6, "agriculture"),
+    ("IN-AS", "Assam", "Dispur", 26.1445, 91.7362, 35.6, "industrial"),
+    ("IN-BR", "Bihar", "Patna", 25.5941, 85.1376, 128.5, "agriculture"),
+    ("IN-CT", "Chhattisgarh", "Raipur", 21.2514, 81.6296, 29.4, "industrial"),
+    ("IN-GA", "Goa", "Panaji", 15.4909, 73.8278, 1.6, "traffic"),
+    ("IN-GJ", "Gujarat", "Gandhinagar", 23.2156, 72.6369, 70.1, "industrial"),
+    ("IN-HR", "Haryana", "Chandigarh", 30.7333, 76.7794, 29.4, "agriculture"),
+    ("IN-HP", "Himachal Pradesh", "Shimla", 31.1048, 77.1734, 7.5, "traffic"),
+    ("IN-JH", "Jharkhand", "Ranchi", 23.3441, 85.3096, 38.6, "industrial"),
+    ("IN-KA", "Karnataka", "Bengaluru", 12.9716, 77.5946, 67.6, "traffic"),
+    ("IN-KL", "Kerala", "Thiruvananthapuram", 8.5241, 76.9366, 35.7, "traffic"),
+    ("IN-MP", "Madhya Pradesh", "Bhopal", 23.2599, 77.4126, 85.4, "industrial"),
+    ("IN-MH", "Maharashtra", "Mumbai", 19.0760, 72.8777, 124.9, "traffic"),
+    ("IN-MN", "Manipur", "Imphal", 24.8170, 93.9368, 3.2, "agriculture"),
+    ("IN-ML", "Meghalaya", "Shillong", 25.5788, 91.8933, 3.4, "agriculture"),
+    ("IN-MZ", "Mizoram", "Aizawl", 23.7271, 92.7176, 1.2, "agriculture"),
+    ("IN-NL", "Nagaland", "Kohima", 25.6751, 94.1086, 2.2, "agriculture"),
+    ("IN-OD", "Odisha", "Bhubaneswar", 20.2961, 85.8245, 46.4, "industrial"),
+    ("IN-PB", "Punjab", "Chandigarh", 30.7333, 76.7794, 30.5, "agriculture"),
+    ("IN-RJ", "Rajasthan", "Jaipur", 26.9124, 75.7873, 81.0, "construction"),
+    ("IN-SK", "Sikkim", "Gangtok", 27.3389, 88.6065, 0.7, "traffic"),
+    ("IN-TN", "Tamil Nadu", "Chennai", 13.0827, 80.2707, 76.6, "industrial"),
+    ("IN-TG", "Telangana", "Hyderabad", 17.3850, 78.4867, 38.5, "traffic"),
+    ("IN-TR", "Tripura", "Agartala", 23.8315, 91.2868, 4.1, "agriculture"),
+    ("IN-UP", "Uttar Pradesh", "Lucknow", 26.8467, 80.9462, 235.7, "industrial"),
+    ("IN-UT", "Uttarakhand", "Dehradun", 30.3165, 78.0322, 11.7, "construction"),
+    ("IN-WB", "West Bengal", "Kolkata", 22.5726, 88.3639, 99.8, "industrial"),
+    # --- Union territories (Delhi excluded: defined above) ---
+    ("IN-AN", "Andaman & Nicobar Islands", "Port Blair", 11.6234, 92.7265, 0.4, "traffic"),
+    ("IN-CH", "Chandigarh", "Chandigarh", 30.7333, 76.7794, 1.2, "traffic"),
+    ("IN-DH", "Dadra & Nagar Haveli and Daman & Diu", "Daman", 20.3974, 72.8328, 0.6, "industrial"),
+    ("IN-JK", "Jammu & Kashmir", "Srinagar", 34.0837, 74.7973, 13.6, "waste"),
+    ("IN-LA", "Ladakh", "Leh", 34.1526, 77.5771, 0.3, "traffic"),
+    ("IN-LD", "Lakshadweep", "Kavaratti", 10.5669, 72.6420, 0.07, "waste"),
+    ("IN-PY", "Puducherry", "Puducherry", 11.9416, 79.8083, 1.6, "traffic"),
+]
+
+# Offsets (degrees) placing sample locations around a capital, each paired with
+# the emission character it represents. The fourth slot is filled with the
+# state's own dominant character so no two states generate identical data.
+_SUBDIVISION_SITES: List[Tuple[str, float, float, str]] = [
+    ("Industrial Estate", 0.062, 0.054, "industrial"),
+    ("Ring Road Corridor", -0.045, 0.071, "traffic"),
+    ("Construction Zone", 0.051, -0.063, "construction"),
+    ("Outer Belt", -0.088, -0.079, ""),  # "" -> the state's dominant character
+]
+
+
+def _expand_indian_subdivisions() -> None:
+    """Register every Indian subdivision as a selectable deployment region.
+
+    Sample locations and reference stations are derived from the capital rather
+    than hand-authored, which keeps this table readable and guarantees each
+    state produces a populated dashboard instead of an empty one.
+    """
+    for code, name, capital, lat, lon, population, character in INDIA_SUBDIVISIONS:
+        REGIONS.append(
+            {
+                "region_code": code,
+                "name": name,
+                "country_code": "IN",
+                "country_name": "India",
+                "flag": "🇮🇳",
+                "center_lat": lat,
+                "center_lon": lon,
+                "population_millions": population,
+                "timezone_name": "Asia/Kolkata",
+                "node_status": "ACTIVE",
+            }
+        )
+
+        LOCATIONS[code] = [
+            (
+                f"{capital} {label}",
+                round(lat + d_lat, 4),
+                round(lon + d_lon, 4),
+                site_character or character,
+            )
+            for label, d_lat, d_lon, site_character in _SUBDIVISION_SITES
+        ]
+
+        # Prefixed with the country so a subdivision code can never collide
+        # with a partner node's station codes (e.g. Bihar "BR" vs Brazil).
+        suffix = code.replace("-", "")
+        STATIONS[code] = [
+            (
+                f"{suffix}001",
+                f"{capital} Central Reference Station",
+                round(lat + 0.021, 4),
+                round(lon + 0.018, 4),
+                "CPCB",
+            ),
+            (
+                f"{suffix}002",
+                f"{capital} Suburban Reference Station",
+                round(lat - 0.054, 4),
+                round(lon - 0.041, 4),
+                "SPCB",
+            ),
+        ]
+
+
+_expand_indian_subdivisions()
+
 # Local enhancement over the regional background concentration.
 #
 # This is the entire premise of hyperlocal monitoring: a landfill fire or an

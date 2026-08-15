@@ -6,9 +6,9 @@ discovers which codes exist so a user can switch between them.
 
 from __future__ import annotations
 
-from typing import List
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -21,14 +21,33 @@ router = APIRouter(prefix="/api/regions", tags=["Regions"])
 
 
 @router.get("", response_model=RegionListOut)
-def list_regions(db: Session = Depends(get_db)) -> RegionListOut:
-    """All configured deployment regions, active node first."""
-    rows: List[Region] = list(
-        db.scalars(select(Region).order_by(Region.country_name, Region.name)).all()
-    )
+def list_regions(
+    db: Session = Depends(get_db),
+    country_code: Optional[str] = Query(
+        default=None,
+        max_length=3,
+        description=(
+            "ISO 3166-1 alpha-2 country to list regions for. Defaults to this "
+            "deployment's own country. Pass `ALL` for every configured region."
+        ),
+    ),
+) -> RegionListOut:
+    """Selectable deployment regions, this node's own region first.
 
-    # The node this deployment is configured as leads the list, so the region
-    # a user most likely wants is the first thing they see.
+    Scoped to the deploying country by default: an operator picks between the
+    states they are responsible for, not other nations' regions. Partner-country
+    records still exist and remain available to the BRICS network endpoints.
+    """
+    query = select(Region)
+
+    requested = (country_code or settings.default_country_code).upper()
+    if requested != "ALL":
+        query = query.where(Region.country_code == requested)
+
+    rows: List[Region] = list(db.scalars(query.order_by(Region.name)).all())
+
+    # The node this deployment is configured as leads the list, so the region a
+    # user most likely wants is the first thing they see.
     default_code = settings.default_region_code.upper()
     rows.sort(key=lambda region: (region.region_code.upper() != default_code,))
 

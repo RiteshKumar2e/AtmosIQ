@@ -257,6 +257,8 @@ GET    /api/analytics/overview
 GET    /api/analytics/trends
 GET    /api/analytics/responsible-ai
 
+GET    /api/regions                  selectable regions (this country by default)
+
 GET    /api/brics/overview
 GET    /api/brics/nodes/{country_code}
 
@@ -366,6 +368,20 @@ SQLite via SQLAlchemy, created and seeded automatically on first start.
 
 **Tables:** `users`, `regions`, `monitoring_stations`, `citizen_reports`, `ai_assessments`,
 `sensor_readings`, `hotspots`, `alerts`, `pollution_records`, `contact_messages`
+
+### Regions
+
+The home node deploys per state. All 36 Indian subdivisions — 28 states and 8 union
+territories, keyed by their ISO 3166-2:IN codes — are seeded as selectable regions, each with
+reference stations, sample locations and 90 days of history.
+
+`GET /api/regions` is scoped to the deploying country (`DEFAULT_COUNTRY_CODE`), so the
+dashboard's region selector offers Indian states and nothing else. Four partner-country
+records (Brazil, Russia, China, South Africa) remain in the database to drive the BRICS
+Network page; pass `?country_code=ALL` to list every configured region.
+
+Switching region re-keys every dashboard query, so the map, hotspots, forecast, alerts and
+analytics all move to the selected state.
 
 Seed data is deterministic (fixed RNG seed), so every developer and every judge sees an
 identical database: 20+ citizen reports, 10+ hotspots, alerts, sensor readings, historical
