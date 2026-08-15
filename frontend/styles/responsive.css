@@ -1,0 +1,331 @@
+/* ==========================================================================
+   Responsive rules — laptop, tablet and mobile.
+   Loaded last so these breakpoints override the page stylesheets.
+
+   Breakpoints: 1200 (laptop) / 1024 (small laptop) / 900 (tablet) / 640 (mobile)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Laptop
+   -------------------------------------------------------------------------- */
+@media (max-width: 1200px) {
+  :root {
+    --text-4xl: 2.6rem;
+    --text-3xl: 2rem;
+  }
+
+  .dashboard-shell {
+    --sidebar-width: 224px;
+  }
+
+  .hero-inner {
+    gap: 40px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Small laptop / large tablet
+   -------------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .section {
+    padding-block: 68px;
+  }
+
+  .hero {
+    padding-block: 60px 68px;
+  }
+
+  .hero-inner {
+    grid-template-columns: 1fr;
+    gap: 44px;
+  }
+
+  .hero-copy {
+    max-width: 640px;
+  }
+
+  .intel-preview-grid,
+  .solution-flow,
+  .about-split,
+  .hiw-architecture-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+
+  .dash-overview-grid,
+  .intelligence-grid,
+  .forecast-grid,
+  .hotspots-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .analytics-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  /* Sidebar becomes an overlay drawer below this width. */
+  .dashboard-sidebar {
+    position: fixed;
+    inset-block: 0;
+    left: 0;
+    z-index: 130;
+    transform: translateX(-100%);
+    transition: transform 220ms var(--ease);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .dashboard-sidebar.is-open {
+    transform: translateX(0);
+  }
+
+  .dashboard-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar-scrim {
+    display: block;
+  }
+
+  .dashboard-menu-button {
+    display: inline-flex;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Tablet
+   -------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  :root {
+    --text-4xl: 2.25rem;
+    --text-3xl: 1.75rem;
+    --text-2xl: 1.5rem;
+  }
+
+  .section {
+    padding-block: 56px;
+  }
+
+  .section-header {
+    margin-bottom: 32px;
+  }
+
+  /* Public navigation collapses to the hamburger menu. */
+  .nav-links,
+  .nav-actions .btn {
+    display: none;
+  }
+
+  .nav-toggle {
+    display: inline-flex;
+  }
+
+  .kpi-grid,
+  .features-preview-grid,
+  .impact-grid,
+  .feature-grid,
+  .brics-country-grid,
+  .settings-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .problem-flow {
+    grid-template-columns: 1fr;
+  }
+
+  .problem-flow-arrow {
+    transform: rotate(90deg);
+    justify-self: center;
+  }
+
+  .auth-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-aside {
+    display: none;
+  }
+
+  .dashboard-page {
+    padding: 22px 18px 48px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .chart-card-body {
+    height: 260px;
+  }
+
+  .map-shell {
+    height: 420px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Mobile
+   -------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  :root {
+    --text-4xl: 1.95rem;
+    --text-3xl: 1.55rem;
+    --text-2xl: 1.35rem;
+    --header-height: 60px;
+  }
+
+  .container,
+  .container-wide {
+    padding-inline: 16px;
+  }
+
+  .section {
+    padding-block: 44px;
+  }
+
+  .section-lead {
+    font-size: var(--text-md);
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hero-actions .btn {
+    width: 100%;
+  }
+
+  .hero-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kpi-grid,
+  .features-preview-grid,
+  .impact-grid,
+  .feature-grid,
+  .brics-country-grid,
+  .settings-grid,
+  .analytics-grid-2,
+  .field-row {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .card-padded,
+  .card-body,
+  .card-header {
+    padding: 18px;
+  }
+
+  .dialog-content {
+    width: calc(100vw - 20px);
+    max-height: calc(100vh - 40px);
+  }
+
+  .dialog-footer {
+    flex-direction: column-reverse;
+  }
+
+  .dialog-footer .btn {
+    width: 100%;
+  }
+
+  .toast-viewport {
+    right: 12px;
+    left: 12px;
+    bottom: 12px;
+    width: auto;
+  }
+
+  .chart-card-body {
+    height: 230px;
+  }
+
+  .map-shell {
+    height: 340px;
+  }
+
+  .page-title {
+    font-size: var(--text-2xl);
+  }
+
+  .stat-value {
+    font-size: 1.75rem;
+  }
+
+  /* Tables scroll inside their own container rather than the page. */
+  .table {
+    min-width: 640px;
+  }
+
+  .hiw-step {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .hiw-step-number {
+    justify-self: start;
+  }
+
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-bar .select,
+  .filter-bar .input {
+    width: 100%;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Small mobile
+   -------------------------------------------------------------------------- */
+@media (max-width: 400px) {
+  .hero-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .badge-row {
+    flex-wrap: wrap;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Print — analysts export alert and hotspot pages for briefings.
+   -------------------------------------------------------------------------- */
+@media print {
+  .navbar,
+  .site-footer,
+  .dashboard-sidebar,
+  .dashboard-topbar,
+  .toast-viewport,
+  .btn {
+    display: none !important;
+  }
+
+  .dashboard-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    break-inside: avoid;
+    box-shadow: none;
+    border-color: #ccc;
+  }
+}

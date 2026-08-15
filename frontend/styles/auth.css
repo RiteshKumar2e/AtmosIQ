@@ -1,0 +1,360 @@
+/* ==========================================================================
+   Authentication pages — /login, /register, /forgot-password
+
+   Deliberately separate from the public site chrome: no marketing navbar,
+   a focused single-task layout with a contextual brand panel.
+   ========================================================================== */
+
+.auth-shell {
+  display: grid;
+  grid-template-columns: 1fr 1.05fr;
+  min-height: 100vh;
+  background: var(--background);
+}
+
+/* --------------------------------------------------------------------------
+   Brand panel
+   -------------------------------------------------------------------------- */
+.auth-aside {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 40px;
+  background: linear-gradient(160deg, #10201f 0%, #0b3b37 100%);
+  color: #c3d1cf;
+  overflow: hidden;
+}
+
+.auth-aside::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 80% 70% at 30% 20%, #000 20%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 30% 20%, #000 20%, transparent 75%);
+  pointer-events: none;
+}
+
+.auth-aside-brand {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: #fff;
+}
+
+.auth-aside-body {
+  position: relative;
+  max-width: 430px;
+}
+
+.auth-aside-title {
+  font-size: 1.9rem;
+  line-height: 1.22;
+  letter-spacing: -0.025em;
+  color: #fff;
+  margin-bottom: 16px;
+}
+
+.auth-aside-text {
+  font-size: var(--text-md);
+  line-height: 1.7;
+  color: #9bb0ad;
+  margin-bottom: 30px;
+}
+
+.auth-aside-points {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.auth-aside-point {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: #b3c4c2;
+}
+
+.auth-aside-point-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius);
+  background: rgba(111, 191, 174, 0.15);
+  color: #6fbfae;
+  flex-shrink: 0;
+}
+
+.auth-aside-point strong {
+  display: block;
+  color: #fff;
+  font-weight: 650;
+  margin-bottom: 2px;
+}
+
+.auth-aside-footer {
+  position: relative;
+  font-size: var(--text-xs);
+  color: #6f8582;
+  line-height: 1.65;
+  max-width: 430px;
+}
+
+/* --------------------------------------------------------------------------
+   Form panel
+   -------------------------------------------------------------------------- */
+.auth-main {
+  display: flex;
+  flex-direction: column;
+  padding: 32px 40px 48px;
+  overflow-y: auto;
+}
+
+.auth-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+/* The brand mark only appears here when the aside is hidden on mobile. */
+.auth-mobile-brand {
+  display: none;
+  align-items: center;
+  gap: 9px;
+  font-size: var(--text-md);
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .auth-mobile-brand {
+    display: inline-flex;
+  }
+  .auth-main {
+    padding: 24px 20px 40px;
+  }
+}
+
+.auth-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--muted);
+  transition: color var(--duration) var(--ease);
+}
+
+.auth-back-link:hover {
+  color: var(--primary);
+}
+
+.auth-form-wrap {
+  width: 100%;
+  max-width: 424px;
+  margin-inline: auto;
+  margin-block: auto;
+}
+
+.auth-heading {
+  margin-bottom: 28px;
+}
+
+.auth-heading h1 {
+  font-size: var(--text-3xl);
+  letter-spacing: -0.03em;
+  margin-bottom: 8px;
+}
+
+.auth-heading p {
+  font-size: var(--text-base);
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.auth-form {
+  margin-bottom: 22px;
+}
+
+.auth-form-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+
+.auth-link {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--primary);
+  transition: color var(--duration) var(--ease);
+}
+
+.auth-link:hover {
+  color: var(--primary-hover);
+  text-decoration: underline;
+}
+
+.auth-alt {
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.auth-legal {
+  margin-top: 22px;
+  font-size: var(--text-xs);
+  color: var(--muted);
+  line-height: 1.65;
+  text-align: center;
+}
+
+/* Demo account access ---------------------------------------------------- */
+.auth-demo {
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--primary-soft);
+  border: 1px solid var(--primary-border);
+  margin-bottom: 22px;
+}
+
+.auth-demo-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--text-sm);
+  font-weight: 650;
+  color: var(--primary);
+  margin-bottom: 5px;
+}
+
+.auth-demo-text {
+  font-size: var(--text-xs);
+  color: var(--muted-strong);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+/* Password strength ------------------------------------------------------ */
+.password-meter {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.password-meter-bar {
+  flex: 1;
+  height: 3px;
+  border-radius: var(--radius-full);
+  background: var(--border);
+  transition: background var(--duration) var(--ease);
+}
+
+.password-meter-bar.is-weak {
+  background: var(--danger);
+}
+.password-meter-bar.is-fair {
+  background: var(--warning);
+}
+.password-meter-bar.is-strong {
+  background: var(--success);
+}
+
+.password-meter-label {
+  margin-top: 5px;
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+/* Role selector ---------------------------------------------------------- */
+.role-options {
+  display: grid;
+  gap: 8px;
+}
+
+.role-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+  background: var(--card);
+  transition: border-color var(--duration) var(--ease),
+    background var(--duration) var(--ease);
+}
+
+.role-option:hover {
+  border-color: var(--muted);
+}
+
+.role-option.is-selected {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.role-option input {
+  margin-top: 3px;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+}
+
+.role-option-title {
+  font-size: var(--text-base);
+  font-weight: 650;
+}
+
+.role-option-text {
+  font-size: var(--text-xs);
+  color: var(--muted);
+  line-height: 1.5;
+  margin-top: 1px;
+}
+
+/* Success state (forgot password) ---------------------------------------- */
+.auth-success {
+  text-align: center;
+  padding-block: 8px;
+}
+
+.auth-success-icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 20px;
+  border-radius: var(--radius-full);
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.auth-success h1 {
+  font-size: var(--text-2xl);
+  margin-bottom: 10px;
+}
+
+.auth-success p {
+  font-size: var(--text-base);
+  color: var(--muted);
+  line-height: 1.68;
+  margin-bottom: 24px;
+}
+
+.auth-success-email {
+  font-weight: 650;
+  color: var(--foreground);
+  word-break: break-all;
+}
