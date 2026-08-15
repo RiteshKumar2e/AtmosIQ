@@ -25,6 +25,7 @@ import {
   Select,
   Skeleton,
 } from "@/components/ui";
+import { useRegion } from "@/hooks/useRegion";
 import { hotspotsApi } from "@/lib/api";
 import { RISK_LEVELS } from "@/lib/constants";
 import { formatNumber, riskColor, riskKey, timeAgo, titleCase } from "@/lib/utils";
@@ -42,20 +43,24 @@ export default function HotspotsPage() {
   const [riskLevel, setRiskLevel] = useState("");
   const [status, setStatus] = useState("ACTIVE");
   const [selected, setSelected] = useState<Hotspot | null>(null);
+  const { regionCode } = useRegion();
 
   const hotspots = useQuery({
-    queryKey: ["hotspots", status, riskLevel],
+    queryKey: ["hotspots", status, riskLevel, regionCode],
     queryFn: () =>
       hotspotsApi.list({
         status,
         risk_level: riskLevel || undefined,
         limit: 200,
+        region_code: regionCode,
       }),
+    enabled: Boolean(regionCode),
   });
 
   const layers = useQuery({
-    queryKey: ["hotspots", "map"],
-    queryFn: () => hotspotsApi.map(),
+    queryKey: ["hotspots", "map", regionCode],
+    queryFn: () => hotspotsApi.map(regionCode),
+    enabled: Boolean(regionCode),
   });
 
   const rows = hotspots.data ?? [];

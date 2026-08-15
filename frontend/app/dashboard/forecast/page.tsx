@@ -29,15 +29,19 @@ import {
   Select,
   Skeleton,
 } from "@/components/ui";
+import { useRegion } from "@/hooks/useRegion";
 import { forecastApi } from "@/lib/api";
 import { cn, riskColor, riskLevelFromScore, timeAgo } from "@/lib/utils";
 
 export default function ForecastPage() {
   const [horizon, setHorizon] = useState(6);
 
+  const { regionCode } = useRegion();
+
   const forecast = useQuery({
-    queryKey: ["forecast", horizon],
-    queryFn: () => forecastApi.get({ horizon_hours: horizon }),
+    queryKey: ["forecast", horizon, regionCode],
+    queryFn: () => forecastApi.get({ horizon_hours: horizon, region_code: regionCode }),
+    enabled: Boolean(regionCode),
   });
 
   const data = forecast.data;

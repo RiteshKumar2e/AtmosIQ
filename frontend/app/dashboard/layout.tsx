@@ -6,7 +6,9 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { AuthGuard } from "@/components/auth/AuthGuard";
+import { RegionSelector } from "@/components/dashboard/RegionSelector";
 import { DashboardSidebar } from "@/components/navigation/DashboardSidebar";
+import { RegionProvider } from "@/hooks/useRegion";
 import { alertsApi, systemApi } from "@/lib/api";
 import { DASHBOARD_NAV } from "@/lib/constants";
 
@@ -43,6 +45,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <AuthGuard>
+      <RegionProvider>
       <div className="dashboard-shell">
         <DashboardSidebar
           open={sidebarOpen}
@@ -64,6 +67,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <p className="topbar-title">{title}</p>
 
             <div className="topbar-meta">
+              <RegionSelector />
+
               <span
                 className="topbar-chip is-optional"
                 title={`AI provider: ${aiProvider}`}
@@ -95,6 +100,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </main>
         </div>
       </div>
+      </RegionProvider>
     </AuthGuard>
   );
 }

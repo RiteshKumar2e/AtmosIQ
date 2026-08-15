@@ -26,6 +26,7 @@ import {
   ErrorState,
   Skeleton,
 } from "@/components/ui";
+import { useRegion } from "@/hooks/useRegion";
 import { analyticsApi, forecastApi } from "@/lib/api";
 import { formatNumber, riskColor, timeAgo, titleCase } from "@/lib/utils";
 
@@ -48,14 +49,18 @@ function pollutantLevel(value: number, guideline: number): string {
 }
 
 export default function IntelligencePage() {
+  const { regionCode } = useRegion();
+
   const overview = useQuery({
-    queryKey: ["analytics", "overview"],
-    queryFn: () => analyticsApi.overview(),
+    queryKey: ["analytics", "overview", regionCode],
+    queryFn: () => analyticsApi.overview(regionCode),
+    enabled: Boolean(regionCode),
   });
 
   const forecast = useQuery({
-    queryKey: ["forecast", 6],
-    queryFn: () => forecastApi.get({ horizon_hours: 6 }),
+    queryKey: ["forecast", 6, regionCode],
+    queryFn: () => forecastApi.get({ horizon_hours: 6, region_code: regionCode }),
+    enabled: Boolean(regionCode),
   });
 
   const data = overview.data;

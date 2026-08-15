@@ -30,6 +30,7 @@ import {
   ErrorState,
   Skeleton,
 } from "@/components/ui";
+import { useRegion } from "@/hooks/useRegion";
 import { alertsApi, analyticsApi, hotspotsApi } from "@/lib/api";
 import {
   formatNumber,
@@ -49,19 +50,24 @@ const PollutionMap = dynamic(
 );
 
 export default function DashboardOverviewPage() {
+  const { regionCode } = useRegion();
+
   const overview = useQuery({
-    queryKey: ["analytics", "overview"],
-    queryFn: () => analyticsApi.overview(),
+    queryKey: ["analytics", "overview", regionCode],
+    queryFn: () => analyticsApi.overview(regionCode),
+    enabled: Boolean(regionCode),
   });
 
   const layers = useQuery({
-    queryKey: ["hotspots", "map"],
-    queryFn: () => hotspotsApi.map(),
+    queryKey: ["hotspots", "map", regionCode],
+    queryFn: () => hotspotsApi.map(regionCode),
+    enabled: Boolean(regionCode),
   });
 
   const alerts = useQuery({
-    queryKey: ["alerts", "recent"],
-    queryFn: () => alertsApi.list({ limit: 6 }),
+    queryKey: ["alerts", "recent", regionCode],
+    queryFn: () => alertsApi.list({ limit: 6, region_code: regionCode }),
+    enabled: Boolean(regionCode),
   });
 
   const data = overview.data;

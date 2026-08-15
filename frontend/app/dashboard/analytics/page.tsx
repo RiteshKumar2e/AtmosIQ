@@ -36,6 +36,7 @@ import {
   Select,
   Skeleton,
 } from "@/components/ui";
+import { useRegion } from "@/hooks/useRegion";
 import { analyticsApi } from "@/lib/api";
 import { formatNumber, titleCase } from "@/lib/utils";
 
@@ -53,14 +54,18 @@ const SOURCE_COLORS = [
 export default function AnalyticsPage() {
   const [granularity, setGranularity] = useState<"daily" | "weekly" | "monthly">("daily");
 
+  const { regionCode } = useRegion();
+
   const overview = useQuery({
-    queryKey: ["analytics", "overview"],
-    queryFn: () => analyticsApi.overview(),
+    queryKey: ["analytics", "overview", regionCode],
+    queryFn: () => analyticsApi.overview(regionCode),
+    enabled: Boolean(regionCode),
   });
 
   const trends = useQuery({
-    queryKey: ["analytics", "trends", granularity],
-    queryFn: () => analyticsApi.trends({ granularity }),
+    queryKey: ["analytics", "trends", granularity, regionCode],
+    queryFn: () => analyticsApi.trends({ granularity, region_code: regionCode }),
+    enabled: Boolean(regionCode),
   });
 
   const data = trends.data;

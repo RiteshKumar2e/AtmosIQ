@@ -25,6 +25,7 @@ from app.api import (
     demo,
     forecast,
     hotspots,
+    regions,
     reports,
 )
 from app.config import settings
@@ -114,6 +115,7 @@ app = FastAPI(
         {"name": "BRICS Network", "description": "Cross-border interoperability layer"},
         {"name": "Demo Scenario", "description": "Scripted end-to-end demonstration"},
         {"name": "Contact", "description": "Public enquiry intake"},
+        {"name": "Regions", "description": "Deployment regions available for selection"},
         {"name": "System", "description": "Health and diagnostics"},
     ],
 )
@@ -203,6 +205,7 @@ app.include_router(analytics.router)
 app.include_router(brics.router)
 app.include_router(demo.router)
 app.include_router(contact.router)
+app.include_router(regions.router)
 
 
 @app.get("/api/health", response_model=HealthOut, tags=["System"])

@@ -452,6 +452,28 @@ class DemoScenarioOut(BaseModel):
 
 
 # --------------------------------------------------------------------------
+# Regions
+# --------------------------------------------------------------------------
+class RegionOut(ORMModel):
+    region_code: str
+    name: str
+    country_code: str
+    country_name: str
+    flag: str
+    center_lat: float
+    center_lon: float
+    population_millions: float
+    timezone_name: str
+    node_status: str
+    data_mode: DataMode
+
+
+class RegionListOut(BaseModel):
+    regions: List[RegionOut]
+    default_region_code: str
+
+
+# --------------------------------------------------------------------------
 # Contact
 # --------------------------------------------------------------------------
 class ContactCreate(BaseModel):

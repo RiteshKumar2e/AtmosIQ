@@ -24,6 +24,7 @@ import {
   Select,
   Skeleton,
 } from "@/components/ui";
+import { useRegion } from "@/hooks/useRegion";
 import { reportsApi, resolveMediaUrl } from "@/lib/api";
 import { REPORT_TYPES } from "@/lib/constants";
 import { formatDateTime, riskColor, timeAgo, titleCase, truncate } from "@/lib/utils";
@@ -38,15 +39,19 @@ export default function ReportsPage() {
   const [status, setStatus] = useState("");
   const [selected, setSelected] = useState<Report | null>(null);
 
+  const { regionCode } = useRegion();
+
   const reports = useQuery({
-    queryKey: ["reports", page, reportType, status],
+    queryKey: ["reports", page, reportType, status, regionCode],
     queryFn: () =>
       reportsApi.list({
         page,
         page_size: PAGE_SIZE,
         report_type: reportType || undefined,
         status: status || undefined,
+        region_code: regionCode,
       }),
+    enabled: Boolean(regionCode),
   });
 
   const data = reports.data;

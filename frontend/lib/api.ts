@@ -22,6 +22,7 @@ import type {
   Health,
   Hotspot,
   MapLayers,
+  RegionList,
   Report,
   ReportList,
   ResponsibleAi,
@@ -302,6 +303,10 @@ export const contactApi = {
       auth: false,
       body: payload,
     }),
+};
+
+export const regionsApi = {
+  list: () => request<RegionList>("/api/regions", { auth: false }),
 };
 
 export const systemApi = {

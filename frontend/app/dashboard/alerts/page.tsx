@@ -32,6 +32,7 @@ import {
 } from "@/components/ui";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
+import { useRegion } from "@/hooks/useRegion";
 import { ApiError, alertsApi } from "@/lib/api";
 import { canActOnAlerts } from "@/lib/auth";
 import { RISK_LEVELS } from "@/lib/constants";
@@ -51,14 +52,18 @@ export default function AlertsPage() {
   const [assigning, setAssigning] = useState<Alert | null>(null);
   const [assignee, setAssignee] = useState("");
 
+  const { regionCode } = useRegion();
+
   const alerts = useQuery({
-    queryKey: ["alerts", severity, status],
+    queryKey: ["alerts", severity, status, regionCode],
     queryFn: () =>
       alertsApi.list({
         severity: severity || undefined,
         status: status || undefined,
         limit: 100,
+        region_code: regionCode,
       }),
+    enabled: Boolean(regionCode),
   });
 
   const update = useMutation({

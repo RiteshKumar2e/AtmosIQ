@@ -321,6 +321,28 @@ export interface AnalyticsTrends {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Regions                                                                    */
+/* -------------------------------------------------------------------------- */
+export interface Region {
+  region_code: string;
+  name: string;
+  country_code: string;
+  country_name: string;
+  flag: string;
+  center_lat: number;
+  center_lon: number;
+  population_millions: number;
+  timezone_name: string;
+  node_status: string;
+  data_mode: DataMode;
+}
+
+export interface RegionList {
+  regions: Region[];
+  default_region_code: string;
+}
+
+/* -------------------------------------------------------------------------- */
 /* BRICS                                                                      */
 /* -------------------------------------------------------------------------- */
 export interface BricsNode {
