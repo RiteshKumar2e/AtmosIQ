@@ -350,13 +350,14 @@ Restart the backend — it rewrites `libsql://` into the `sqlite+libsql://` dial
 passes the token for you. Tables are created and seeded on first connect exactly as they are
 locally. Leave either value blank to fall back to the local file.
 
-The driver ships in `requirements.txt` (`sqlalchemy-libsql` + `libsql-client`). If the Turso
-engine cannot be constructed, the app logs the failure loudly and falls back to local SQLite
-rather than refusing to start.
+The driver ships in `requirements.txt` (`libsql`). If the Turso engine cannot be constructed,
+the app logs the failure loudly and falls back to local SQLite rather than refusing to start.
 
-> **Python 3.10 note.** `libsql-client` maps connection errors onto `sqlite3.SQLITE_*`
-> constants that CPython only added in 3.11. The app backfills them, so a bad host or token
-> surfaces as a readable `OperationalError` instead of an `AttributeError`.
+> **Why not `sqlalchemy-libsql`?** The published dialect speaks only the legacy Hrana
+> **WebSocket** protocol, which current Turso instances reject with HTTP 400 — it cannot
+> connect at all. `app/database/libsql_https.py` defines a small `sqlite+libsql_https`
+> dialect over the official `libsql` package, which talks to Turso over HTTPS. It inherits
+> SQLAlchemy's pysqlite dialect wholesale, so only the transport differs.
 
 ### Schema
 

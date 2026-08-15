@@ -8,12 +8,4 @@ PyJWT==2.10.1
 httpx==0.28.1
 python-dotenv==1.0.1
 email-validator==2.2.0
-
-# --- Turso / libSQL -----------------------------------------------------
-# Required only when TURSO_DATABASE_URL and TURSO_AUTH_TOKEN are set.
-# The dialect speaks the SQLite protocol, so no model or query changes.
-# Pinned to 0.1.0 deliberately: it uses the pure-Python `libsql-client`
-# DBAPI, whereas 0.2.0 pulls `libsql-experimental`, which needs a Rust
-# toolchain to build and has no Windows wheel.
-sqlalchemy-libsql==0.1.0
-libsql-client==0.3.1
+libsql==0.1.11

@@ -103,7 +103,10 @@ class Settings(BaseSettings):
                 break
         host = host.rstrip("/")
         token = quote_plus(self.turso_auth_token.strip())
-        return f"sqlite+libsql://{host}/?authToken={token}&secure=true"
+        # `libsql_https` rather than `libsql`: current Turso instances reject
+        # the legacy Hrana WebSocket handshake with HTTP 400, so the transport
+        # has to be HTTPS. See app/database/libsql_https.py.
+        return f"sqlite+libsql_https://{host}/?authToken={token}&secure=true"
 
     @property
     def database_backend(self) -> str:
