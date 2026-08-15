@@ -421,6 +421,7 @@ class HealthOut(BaseModel):
     version: str
     environment: str
     database: str
+    database_backend: str
     ai_provider: str
     gemini_model: str
     time: datetime

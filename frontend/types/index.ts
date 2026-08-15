@@ -385,6 +385,7 @@ export interface Health {
   version: string;
   environment: string;
   database: string;
+  database_backend: string;
   ai_provider: string;
   gemini_model: string;
   time: string;

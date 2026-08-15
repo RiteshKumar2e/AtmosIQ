@@ -24,6 +24,10 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
         case_sensitive=False,
+        # Without this, pydantic-settings JSON-decodes list-typed fields
+        # straight from .env and rejects `A,B,C` before `_split_csv` below
+        # ever runs. Disabling it lets the documented comma-separated form work.
+        enable_decoding=False,
     )
 
     # --- Core ---------------------------------------------------------------

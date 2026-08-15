@@ -221,6 +221,7 @@ def health() -> HealthOut:
         version=settings.app_version,
         environment=settings.app_env,
         database=database,
+        database_backend=settings.database_backend,
         ai_provider=gemini_service.provider(),
         gemini_model=settings.gemini_model if settings.gemini_enabled else "deterministic-fallback",
         time=datetime.now(timezone.utc),

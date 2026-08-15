@@ -1,5 +1,4 @@
 import {
-  Activity,
   AlertTriangle,
   ArrowRight,
   BellRing,
@@ -21,7 +20,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-import { DataBadge } from "@/components/dashboard/shared";
 import { HeroVisual } from "@/components/landing/HeroVisual";
 import { Button } from "@/components/ui";
 import { APP_DESCRIPTION, BRICS_COUNTRIES } from "@/lib/constants";
@@ -237,167 +235,6 @@ export function SolutionSection() {
 }
 
 /* ========================================================================== */
-/* Intelligence preview                                                       */
-/* ========================================================================== */
-const PREVIEW_HOTSPOTS = [
-  { name: "Bawana Industrial Corridor", score: 89, level: "CRITICAL", source: "Industrial stack" },
-  { name: "Anand Vihar Transport Hub", score: 84, level: "CRITICAL", source: "Traffic corridor" },
-  { name: "Ghazipur Landfill Perimeter", score: 81, level: "CRITICAL", source: "Open waste burning" },
-  { name: "Mundka Construction Zone", score: 71, level: "HIGH", source: "Construction dust" },
-];
-
-const PREVIEW_METRICS = [
-  { label: "Current Air Risk", value: "72", suffix: " / 100", mode: "MODELLED", meta: "High risk band" },
-  { label: "Active Hotspots", value: "12", suffix: "", mode: "MODELLED", meta: "Across 6 districts" },
-  { label: "Citizen Signals", value: "438", suffix: "", mode: "SIMULATED", meta: "Last 30 days" },
-  { label: "Critical Alerts", value: "4", suffix: "", mode: "MODELLED", meta: "Awaiting action" },
-];
-
-export function IntelligencePreview() {
-  return (
-    <section className="section intel-preview">
-      <div className="container">
-        <div className="section-header centered">
-          <p className="eyebrow">
-            <Activity size={13} aria-hidden="true" />
-            Intelligence Preview
-          </p>
-          <h2>The operational picture, in one view.</h2>
-          <p className="section-lead">
-            Everything an air-quality officer needs to triage a morning: where risk is
-            concentrated, which signals corroborate it, and what to do next.
-          </p>
-        </div>
-
-        <div className="intel-preview-panel">
-          <div className="intel-preview-bar">
-            <span className="intel-preview-bar-title">
-              <MapPinned size={16} aria-hidden="true" style={{ color: "var(--primary)" }} />
-              Delhi NCR — Regional Intelligence
-            </span>
-            <DataBadge mode="SIMULATED" />
-          </div>
-
-          <div className="intel-preview-metrics">
-            {PREVIEW_METRICS.map((metric) => (
-              <div className="intel-metric" key={metric.label}>
-                <p className="intel-metric-label">{metric.label}</p>
-                <p className="intel-metric-value">
-                  {metric.value}
-                  {metric.suffix ? <small>{metric.suffix}</small> : null}
-                </p>
-                <p className="intel-metric-meta">
-                  <DataBadge mode={metric.mode} />
-                  {metric.meta}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          <div className="intel-preview-grid">
-            <div className="intel-preview-map">
-              <p className="intel-side-title">Risk distribution</p>
-              <PreviewMap />
-            </div>
-
-            <div className="intel-preview-side">
-              <p className="intel-side-title">Highest-risk hotspots</p>
-              {PREVIEW_HOTSPOTS.map((hotspot, index) => (
-                <div className="intel-hotspot-row" key={hotspot.name}>
-                  <span className="intel-hotspot-rank">{index + 1}</span>
-                  <div className="intel-hotspot-body">
-                    <p className="intel-hotspot-name">{hotspot.name}</p>
-                    <p className="intel-hotspot-meta">{hotspot.source}</p>
-                  </div>
-                  <span
-                    className={`hotspot-score is-risk-${hotspot.level === "CRITICAL" ? "critical" : "high"}`}
-                  >
-                    {hotspot.score}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="intel-preview-footer">
-            <span>
-              Demonstration values. Not live regulatory measurements.
-            </span>
-            <Link href="/dashboard" className="auth-link">
-              Open the full dashboard →
-            </Link>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/** Compact choropleth-style preview of regional risk. */
-function PreviewMap() {
-  return (
-    <div className="static-map" style={{ height: 300 }}>
-      <svg viewBox="0 0 460 300" role="img" aria-label="Regional risk map with hotspots concentrated in the north-west industrial corridor">
-        <rect width="460" height="300" fill="#eef3f2" />
-
-        <g stroke="#d3dedc" strokeWidth="1.2">
-          <path d="M14 24 L150 12 L182 96 L104 150 L22 124 Z" fill="#f6dcd6" />
-          <path d="M150 12 L316 26 L332 112 L182 96 Z" fill="#fbe9e6" />
-          <path d="M316 26 L448 20 L444 122 L332 112 Z" fill="#fdf2e0" />
-          <path d="M22 124 L104 150 L120 278 L28 284 Z" fill="#fdf2e0" />
-          <path d="M104 150 L182 96 L332 112 L316 240 L120 278 Z" fill="#f9e6e2" />
-          <path d="M332 112 L444 122 L440 272 L316 240 Z" fill="#e9f3ec" />
-        </g>
-
-        <path
-          d="M46 6 C 140 84, 176 130, 240 166 S 356 244, 396 296"
-          stroke="#c5dbe4"
-          strokeWidth="6"
-          fill="none"
-          strokeLinecap="round"
-        />
-
-        {/* Hotspots, sized by risk */}
-        <g stroke="#fff" strokeWidth="2.2">
-          <circle cx="78" cy="70" r="13" fill="#b3372c" fillOpacity="0.9" />
-          <circle cx="268" cy="66" r="12" fill="#b3372c" fillOpacity="0.9" />
-          <circle cx="232" cy="196" r="11" fill="#b3372c" fillOpacity="0.85" />
-          <circle cx="150" cy="210" r="9.5" fill="#c1611c" fillOpacity="0.9" />
-          <circle cx="356" cy="80" r="8.5" fill="#a86a12" fillOpacity="0.9" />
-          <circle cx="380" cy="196" r="7.5" fill="#2c7a56" fillOpacity="0.9" />
-        </g>
-
-        {/* Stations */}
-        <g fill="#1c6394" stroke="#fff" strokeWidth="1.6">
-          <rect x="118" y="112" width="12" height="12" rx="2.5" />
-          <rect x="300" y="150" width="12" height="12" rx="2.5" />
-          <rect x="196" y="252" width="12" height="12" rx="2.5" />
-          <rect x="404" y="60" width="12" height="12" rx="2.5" />
-        </g>
-      </svg>
-
-      <div className="map-legend" style={{ position: "absolute" }}>
-        <p className="map-legend-title">Risk level</p>
-        <div className="map-legend-items">
-          <span className="map-legend-item">
-            <span className="map-legend-swatch" style={{ background: "#b3372c" }} />
-            Critical
-          </span>
-          <span className="map-legend-item">
-            <span className="map-legend-swatch" style={{ background: "#c1611c" }} />
-            High
-          </span>
-          <span className="map-legend-item">
-            <span className="map-legend-swatch is-station" />
-            Monitoring station
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ========================================================================== */
 /* Features preview                                                           */
 /* ========================================================================== */
 const FEATURE_PREVIEW = [
@@ -596,47 +433,6 @@ export function BricsVision() {
         >
           This prototype demonstrates the interoperability contract with one active node and
           four configured partner nodes. It does not claim live cross-border data exchange.
-        </p>
-      </div>
-    </section>
-  );
-}
-
-/* ========================================================================== */
-/* Impact                                                                     */
-/* ========================================================================== */
-const IMPACT_METRICS = [
-  { value: "10+", label: "Monitoring Regions" },
-  { value: "500+", label: "Citizen Signals" },
-  { value: "40+", label: "Detected Hotspots" },
-  { value: "15", label: "Active Alerts" },
-];
-
-export function ImpactSection() {
-  return (
-    <section className="section">
-      <div className="container">
-        <div className="section-header centered">
-          <p className="eyebrow">
-            <Gauge size={13} aria-hidden="true" />
-            Prototype Scale
-          </p>
-          <h2>What this prototype demonstrates today.</h2>
-        </div>
-
-        <div className="impact-grid">
-          {IMPACT_METRICS.map((metric) => (
-            <article className="impact-card" key={metric.label}>
-              <p className="impact-value">{metric.value}</p>
-              <p className="impact-label">{metric.label}</p>
-            </article>
-          ))}
-        </div>
-
-        <p className="impact-note">
-          <DataBadge mode="SIMULATED" />
-          <strong>Prototype Demonstration Data</strong> — deterministic and reproducible, not
-          live regulatory measurements.
         </p>
       </div>
     </section>

@@ -200,6 +200,10 @@ needs no API key.
 ```env
 APP_ENV=development
 SECRET_KEY=change-this-secret
+
+# Turso wins when both are set; blank falls back to DATABASE_URL
+TURSO_DATABASE_URL=
+TURSO_AUTH_TOKEN=
 DATABASE_URL=sqlite:///./atmosiq.db
 
 GOOGLE_GEMINI_API_KEY=
@@ -313,6 +317,49 @@ analyser. The demonstration never breaks.
 
 ## Database
 
+Three backends are supported through configuration alone — no ORM, model or query changes:
+
+| Backend | How to select it |
+|---|---|
+| **Turso (libSQL)** | Set `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` — wins automatically |
+| **Local SQLite** | The zero-setup default |
+| **PostgreSQL** | Point `DATABASE_URL` at a `postgresql+psycopg` DSN |
+
+The active backend is reported by `GET /api/health` as `database_backend`.
+
+### Turso setup
+
+Turso speaks the SQLite dialect over the network, so every model, index and query written
+against the local file works unchanged.
+
+```bash
+turso auth login
+turso db create atmosiq
+turso db show atmosiq --url        # -> TURSO_DATABASE_URL
+turso db tokens create atmosiq     # -> TURSO_AUTH_TOKEN
+```
+
+Put both values in `backend/.env`:
+
+```env
+TURSO_DATABASE_URL=libsql://atmosiq-yourorg.turso.io
+TURSO_AUTH_TOKEN=eyJhbGciOi...
+```
+
+Restart the backend — it rewrites `libsql://` into the `sqlite+libsql://` dialect URL and
+passes the token for you. Tables are created and seeded on first connect exactly as they are
+locally. Leave either value blank to fall back to the local file.
+
+The driver ships in `requirements.txt` (`sqlalchemy-libsql` + `libsql-client`). If the Turso
+engine cannot be constructed, the app logs the failure loudly and falls back to local SQLite
+rather than refusing to start.
+
+> **Python 3.10 note.** `libsql-client` maps connection errors onto `sqlite3.SQLITE_*`
+> constants that CPython only added in 3.11. The app backfills them, so a bad host or token
+> surfaces as a readable `OperationalError` instead of an `AttributeError`.
+
+### Schema
+
 SQLite via SQLAlchemy, created and seeded automatically on first start.
 
 **Tables:** `users`, `regions`, `monitoring_stations`, `citizen_reports`, `ai_assessments`,
@@ -322,7 +369,10 @@ Seed data is deterministic (fixed RNG seed), so every developer and every judge 
 identical database: 20+ citizen reports, 10+ hotspots, alerts, sensor readings, historical
 records and BRICS node metadata. The generated `.db` file is gitignored.
 
-Point `DATABASE_URL` at PostgreSQL instead and no code changes are required.
+**No figure is hardcoded in the frontend.** Every number shown on the public Home page and
+throughout the dashboard is read live from the API, so the interface always reflects real
+database state. When the backend is unreachable the UI shows an explicit offline state and a
+`—` placeholder rather than a fabricated value.
 
 ---
 

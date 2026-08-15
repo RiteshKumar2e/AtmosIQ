@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
 
+import { ImpactSection, IntelligencePreview } from "@/components/landing/live";
 import {
   BricsVision,
   FeaturesPreview,
   FinalCta,
   Hero,
   HowItWorksPreview,
-  ImpactSection,
-  IntelligencePreview,
   ProblemSection,
   SolutionSection,
 } from "@/components/landing/sections";

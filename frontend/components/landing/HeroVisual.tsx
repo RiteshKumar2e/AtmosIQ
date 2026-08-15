@@ -1,42 +1,66 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
 import { Activity, Radio } from "lucide-react";
 
 import { DataBadge } from "@/components/dashboard/shared";
+import { Skeleton } from "@/components/ui";
+import { analyticsApi, forecastApi, reportsApi } from "@/lib/api";
+import { formatNumber, riskColor, timeAgo } from "@/lib/utils";
 
 /**
  * Hero visual: a condensed environmental intelligence console.
  *
- * Deliberately built from the platform's own vocabulary — a monitoring map with
- * a coverage gap, live risk readouts, incoming citizen signals and a forecast
- * trace — rather than a generic AI illustration. Everything is inline SVG, so
- * it renders on the server with no image request and no layout shift.
+ * Built from the platform's own vocabulary — a monitoring map with a coverage
+ * gap, risk readouts, incoming citizen signals and a forecast trace — rather
+ * than a generic AI illustration.
  *
- * All figures shown here are static demonstration values and are labelled as
- * such in the panel footer.
+ * Every figure is read live from the API. The map itself is a conceptual
+ * diagram of the coverage-gap problem and carries no numbers. When the backend
+ * is unreachable the readouts show "—" rather than inventing values.
  */
-
-const SIGNALS = [
-  { label: "Citizen report · Bawana Industrial Area", time: "2m", color: "var(--risk-critical)" },
-  { label: "Station reading · Anand Vihar", time: "6m", color: "var(--information)" },
-  { label: "Citizen report · Mundka worksite", time: "11m", color: "var(--risk-high)" },
-  { label: "Hotspot confirmed · Ghazipur", time: "18m", color: "var(--risk-critical)" },
-];
-
 export function HeroVisual() {
+  const overview = useQuery({
+    queryKey: ["analytics", "overview"],
+    queryFn: () => analyticsApi.overview(),
+    retry: false,
+  });
+
+  const forecast = useQuery({
+    queryKey: ["forecast", 6],
+    queryFn: () => forecastApi.get({ horizon_hours: 6 }),
+    retry: false,
+  });
+
+  const reports = useQuery({
+    queryKey: ["reports", "hero-feed"],
+    queryFn: () => reportsApi.list({ page: 1, page_size: 4 }),
+    retry: false,
+  });
+
+  const data = overview.data;
+  const loading = overview.isLoading;
+  const offline = overview.isError;
+
   return (
     <div className="hero-visual">
       <div className="hero-panel">
         <div className="hero-panel-header">
           <span className="hero-panel-title">
             <Activity size={15} aria-hidden="true" style={{ color: "var(--primary)" }} />
-            Pollution Intelligence
+            {data ? `${data.region_name} — Pollution Intelligence` : "Pollution Intelligence"}
           </span>
-          <DataBadge mode="SIMULATED" />
+          {data ? <DataBadge mode="MODELLED" /> : null}
         </div>
 
         <div className="hero-panel-body">
-          {/* Map ------------------------------------------------------------ */}
+          {/* Map: conceptual diagram of the coverage gap, not a data surface. */}
           <div className="hero-map">
-            <svg viewBox="0 0 420 210" role="img" aria-label="Regional monitoring map showing three detected pollution hotspots and a coverage gap between fixed stations">
+            <svg
+              viewBox="0 0 420 210"
+              role="img"
+              aria-label="Diagram of a monitoring region showing pollution hotspots occurring in the coverage gap between fixed monitoring stations"
+            >
               <defs>
                 <radialGradient id="hotspot-critical" cx="50%" cy="50%">
                   <stop offset="0%" stopColor="#b3372c" stopOpacity="0.45" />
@@ -52,10 +76,8 @@ export function HeroVisual() {
                 </radialGradient>
               </defs>
 
-              {/* Base terrain */}
               <rect width="420" height="210" fill="#eef3f2" />
 
-              {/* District boundaries */}
               <g stroke="#d3dedc" strokeWidth="1" fill="#e6eeec">
                 <path d="M12 18 L140 10 L168 74 L96 118 L20 96 Z" />
                 <path d="M140 10 L286 22 L300 88 L168 74 Z" />
@@ -65,7 +87,6 @@ export function HeroVisual() {
                 <path d="M300 88 L404 96 L400 190 L286 176 Z" />
               </g>
 
-              {/* River corridor */}
               <path
                 d="M40 4 C 120 60, 150 92, 210 118 S 320 176, 356 206"
                 stroke="#c5dbe4"
@@ -75,18 +96,30 @@ export function HeroVisual() {
               />
 
               {/* Coverage radius of fixed monitoring stations */}
-              <g fill="#1c6394" fillOpacity="0.07" stroke="#1c6394" strokeOpacity="0.22" strokeDasharray="3 3">
+              <g
+                fill="#1c6394"
+                fillOpacity="0.07"
+                stroke="#1c6394"
+                strokeOpacity="0.22"
+                strokeDasharray="3 3"
+              >
                 <circle cx="86" cy="60" r="46" />
                 <circle cx="330" cy="150" r="44" />
               </g>
 
-              {/* Hotspot plumes */}
               <circle cx="238" cy="52" r="52" fill="url(#hotspot-critical)" />
               <circle cx="150" cy="152" r="46" fill="url(#hotspot-high)" />
               <circle cx="352" cy="60" r="38" fill="url(#hotspot-moderate)" />
 
-              {/* Pulsing detection rings */}
-              <circle cx="238" cy="52" r="8" fill="none" stroke="#b3372c" strokeWidth="1.5" className="hotspot-pulse" />
+              <circle
+                cx="238"
+                cy="52"
+                r="8"
+                fill="none"
+                stroke="#b3372c"
+                strokeWidth="1.5"
+                className="hotspot-pulse"
+              />
               <circle
                 cx="150"
                 cy="152"
@@ -98,21 +131,18 @@ export function HeroVisual() {
                 style={{ animationDelay: "1.1s" }}
               />
 
-              {/* Hotspot cores */}
               <g stroke="#fff" strokeWidth="2">
                 <circle cx="238" cy="52" r="7.5" fill="#b3372c" />
                 <circle cx="150" cy="152" r="7" fill="#c1611c" />
                 <circle cx="352" cy="60" r="6" fill="#a86a12" />
               </g>
 
-              {/* Fixed monitoring stations */}
               <g fill="#1c6394" stroke="#fff" strokeWidth="1.5">
                 <rect x="81" y="55" width="11" height="11" rx="2" />
                 <rect x="325" y="145" width="11" height="11" rx="2" />
                 <rect x="196" y="176" width="11" height="11" rx="2" />
               </g>
 
-              {/* Citizen reports */}
               <g fill="#4a5c61" stroke="#fff" strokeWidth="1.2">
                 <rect x="252" y="76" width="7" height="7" rx="1.5" transform="rotate(45 255.5 79.5)" />
                 <rect x="214" y="34" width="7" height="7" rx="1.5" transform="rotate(45 217.5 37.5)" />
@@ -121,11 +151,27 @@ export function HeroVisual() {
                 <rect x="368" y="44" width="7" height="7" rx="1.5" transform="rotate(45 371.5 47.5)" />
               </g>
 
-              {/* Coverage gap annotation — the platform's core premise */}
+              {/* The platform's core premise, annotated */}
               <g>
-                <line x1="238" y1="52" x2="196" y2="20" stroke="#b3372c" strokeWidth="1" strokeDasharray="3 2" />
+                <line
+                  x1="238"
+                  y1="52"
+                  x2="196"
+                  y2="20"
+                  stroke="#b3372c"
+                  strokeWidth="1"
+                  strokeDasharray="3 2"
+                />
                 <rect x="150" y="6" width="98" height="17" rx="4" fill="#fff" stroke="#f1c9c5" />
-                <text x="199" y="18" textAnchor="middle" fontSize="9.5" fontWeight="600" fill="#b3372c" fontFamily="var(--font-sans)">
+                <text
+                  x="199"
+                  y="18"
+                  textAnchor="middle"
+                  fontSize="9.5"
+                  fontWeight="600"
+                  fill="#b3372c"
+                  fontFamily="var(--font-sans)"
+                >
                   Coverage gap
                 </text>
               </g>
@@ -134,52 +180,50 @@ export function HeroVisual() {
 
           {/* Readouts ------------------------------------------------------- */}
           <div className="hero-readouts">
-            <div className="hero-readout">
-              <p className="hero-readout-label">Air Risk</p>
-              <p className="hero-readout-value" style={{ color: "var(--risk-high)" }}>
-                72<span style={{ fontSize: "var(--text-sm)", color: "var(--muted)" }}>/100</span>
-              </p>
-            </div>
-            <div className="hero-readout">
-              <p className="hero-readout-label">Hotspots</p>
-              <p className="hero-readout-value">12</p>
-            </div>
-            <div className="hero-readout">
-              <p className="hero-readout-label">Confidence</p>
-              <p className="hero-readout-value">86%</p>
-            </div>
+            <Readout
+              label="Air Risk"
+              loading={loading}
+              value={data ? Math.round(data.current_risk) : null}
+              suffix="/100"
+              color={data ? riskColor(data.current_risk_level) : undefined}
+            />
+            <Readout
+              label="Hotspots"
+              loading={loading}
+              value={data ? data.active_hotspots : null}
+            />
+            <Readout
+              label="Signals 24h"
+              loading={loading}
+              value={data ? data.citizen_signals_24h : null}
+            />
           </div>
 
           {/* Forecast ------------------------------------------------------- */}
           <div className="hero-forecast" style={{ marginBottom: 14 }}>
             <div className="hero-forecast-head">
               <span>6-hour risk forecast</span>
-              <span style={{ color: "var(--risk-critical)", fontWeight: 700 }}>Peak 84 · 21:00</span>
+              {forecast.data ? (
+                <span
+                  style={{
+                    color: riskColor(forecast.data.trend),
+                    fontWeight: 700,
+                  }}
+                >
+                  Peak {Math.round(forecast.data.peak_risk)} · {forecast.data.peak_at}
+                </span>
+              ) : null}
             </div>
-            <svg viewBox="0 0 300 56" height="56" width="100%" role="img" aria-label="Forecast line rising from a risk of 72 now to a peak of 84 in six hours">
-              <defs>
-                <linearGradient id="forecast-fill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#0f6f66" stopOpacity="0.22" />
-                  <stop offset="100%" stopColor="#0f6f66" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              {/* Confidence band */}
-              <path
-                d="M4 30 L64 26 L124 20 L184 13 L244 9 L296 12 L296 26 L244 23 L184 27 L124 33 L64 38 L4 40 Z"
-                fill="#0f6f66"
-                fillOpacity="0.1"
-              />
-              <path d="M4 35 L64 32 L124 26 L184 20 L244 16 L296 19 L296 56 L4 56 Z" fill="url(#forecast-fill)" />
-              <polyline
-                points="4,35 64,32 124,26 184,20 244,16 296,19"
-                fill="none"
-                stroke="#0f6f66"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <circle cx="244" cy="16" r="3.5" fill="#b3372c" stroke="#fff" strokeWidth="1.5" />
-            </svg>
+
+            {forecast.isLoading ? (
+              <Skeleton style={{ height: 56 }} />
+            ) : forecast.data?.points?.length ? (
+              <ForecastTrace points={forecast.data.points.map((p) => p.risk_score)} />
+            ) : (
+              <p style={{ fontSize: "var(--text-xs)", color: "var(--muted)", padding: "14px 0" }}>
+                Forecast unavailable
+              </p>
+            )}
           </div>
 
           {/* Signal feed ---------------------------------------------------- */}
@@ -190,20 +234,130 @@ export function HeroVisual() {
                 Incoming signals
               </span>
             </div>
-            {SIGNALS.map((signal) => (
-              <div className="hero-signal-row" key={signal.label}>
-                <span
-                  className="hero-signal-dot"
-                  style={{ background: signal.color }}
-                  aria-hidden="true"
-                />
-                <span className="hero-signal-label">{signal.label}</span>
-                <span className="hero-signal-time">{signal.time}</span>
-              </div>
-            ))}
+
+            {reports.isLoading ? (
+              <>
+                <Skeleton className="skeleton-text" style={{ marginTop: 10 }} />
+                <Skeleton className="skeleton-text" />
+                <Skeleton className="skeleton-text" />
+              </>
+            ) : reports.data?.items?.length ? (
+              reports.data.items.slice(0, 4).map((report) => (
+                <div className="hero-signal-row" key={report.id}>
+                  <span
+                    className="hero-signal-dot"
+                    style={{
+                      background: report.assessment
+                        ? riskColor(report.assessment.risk_level)
+                        : "var(--muted)",
+                    }}
+                    aria-hidden="true"
+                  />
+                  <span className="hero-signal-label">
+                    Citizen report · {report.location_label || "Unnamed location"}
+                  </span>
+                  <span className="hero-signal-time">{timeAgo(report.created_at)}</span>
+                </div>
+              ))
+            ) : (
+              <p style={{ fontSize: "var(--text-xs)", color: "var(--muted)", padding: "12px 0" }}>
+                {offline
+                  ? "Signal feed unavailable — the AtmosIQ API is unreachable."
+                  : "No citizen signals recorded yet."}
+              </p>
+            )}
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+function Readout({
+  label,
+  value,
+  suffix,
+  color,
+  loading,
+}: {
+  label: string;
+  value: number | null;
+  suffix?: string;
+  color?: string;
+  loading: boolean;
+}) {
+  return (
+    <div className="hero-readout">
+      <p className="hero-readout-label">{label}</p>
+      {loading ? (
+        <Skeleton style={{ height: 24, width: "70%" }} />
+      ) : (
+        <p className="hero-readout-value" style={color ? { color } : undefined}>
+          {value === null ? (
+            <span style={{ color: "var(--muted)" }}>—</span>
+          ) : (
+            <>
+              {formatNumber(value)}
+              {suffix ? (
+                <span style={{ fontSize: "var(--text-sm)", color: "var(--muted)" }}>
+                  {suffix}
+                </span>
+              ) : null}
+            </>
+          )}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Sparkline of the live forecast, scaled to the 0-100 risk range. */
+function ForecastTrace({ points }: { points: number[] }) {
+  const width = 300;
+  const height = 56;
+  const top = 6;
+  const bottom = 50;
+
+  const toY = (risk: number) => bottom - (Math.max(0, Math.min(100, risk)) / 100) * (bottom - top);
+  const step = points.length > 1 ? (width - 8) / (points.length - 1) : 0;
+
+  const coords = points.map((risk, index) => [4 + index * step, toY(risk)] as const);
+  const line = coords.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+  const area = `${line} ${width - 4},${height} 4,${height}`;
+
+  const peakIndex = points.indexOf(Math.max(...points));
+  const peak = coords[peakIndex];
+
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      height={height}
+      width="100%"
+      role="img"
+      aria-label={`Forecast risk moving from ${Math.round(points[0])} now to ${Math.round(
+        points[points.length - 1],
+      )} over the next six hours`}
+    >
+      <defs>
+        <linearGradient id="forecast-fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#0f6f66" stopOpacity="0.22" />
+          <stop offset="100%" stopColor="#0f6f66" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+
+      <polygon points={area} fill="url(#forecast-fill)" />
+      <polyline
+        points={line}
+        fill="none"
+        stroke="#0f6f66"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {peak ? (
+        <circle cx={peak[0]} cy={peak[1]} r="3.5" fill="#b3372c" stroke="#fff" strokeWidth="1.5" />
+      ) : null}
+    </svg>
   );
 }
