@@ -1,0 +1,52 @@
+# ---- Secrets -------------------------------------------------------------
+.env
+.env.local
+.env.*.local
+!.env.example
+!.env.local.example
+
+# ---- Python --------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+.venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---- Database & uploads --------------------------------------------------
+*.db
+*.sqlite
+*.sqlite3
+backend/app/static/uploads/*
+!backend/app/static/uploads/.gitkeep
+
+# ---- Node / Next ---------------------------------------------------------
+node_modules/
+.next/
+out/
+build/
+dist/
+.turbo/
+*.tsbuildinfo
+next-env.d.ts
+
+# ---- Logs ----------------------------------------------------------------
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ---- Editors & OS --------------------------------------------------------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Misc ----------------------------------------------------------------
+.vercel
+coverage/
