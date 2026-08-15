@@ -1,6 +1,6 @@
 "use client";
 
-import maplibregl, { type Map as MapLibreMap, type StyleSpecification } from "maplibre-gl";
+import L from "leaflet";
 import { Navigation } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -15,25 +15,17 @@ import type { Hotspot, MonitoringStation, Report, Wind } from "@/types";
  * monitoring stations — so the coverage gap between stations is visible rather
  * than merely asserted.
  *
- * Falls back to a keyless OpenStreetMap raster style when no
- * NEXT_PUBLIC_MAP_STYLE_URL is configured, so the map works out of the box.
+ * Built on Leaflet: raster tiles are plain <img> elements, so the map renders
+ * without WebGL and degrades visibly (rather than to a blank canvas) if the
+ * tile host is unreachable.
+ *
+ * Markers are `divIcon`s styled from the design system, which also sidesteps
+ * Leaflet's broken default-icon asset paths under a bundler.
  */
 
-const OSM_STYLE: StyleSpecification = {
-  version: 8,
-  sources: {
-    osm: {
-      type: "raster",
-      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-      tileSize: 256,
-      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    },
-  },
-  layers: [
-    { id: "background", type: "background", paint: { "background-color": "#eef3f2" } },
-    { id: "osm", type: "raster", source: "osm", paint: { "raster-opacity": 0.82 } },
-  ],
-};
+const OSM_TILES = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+const OSM_ATTRIBUTION =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 type LayerKey = "hotspots" | "reports" | "stations";
 
@@ -57,24 +49,26 @@ export function PollutionMap({
   onSelectHotspot,
 }: PollutionMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<MapLibreMap | null>(null);
-  const markersRef = useRef<maplibregl.Marker[]>([]);
+  const mapRef = useRef<L.Map | null>(null);
+  const layerGroupsRef = useRef<Record<LayerKey, L.LayerGroup | null>>({
+    hotspots: null,
+    reports: null,
+    stations: null,
+  });
+
   const [ready, setReady] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const [tileError, setTileError] = useState(false);
   const [visible, setVisible] = useState<Record<LayerKey, boolean>>({
     hotspots: true,
     reports: true,
     stations: true,
   });
 
-  // Keep the latest callback without re-running the marker effect on every render.
+  // Keep the latest callback without re-running the marker effect every render.
   const selectRef = useRef(onSelectHotspot);
   selectRef.current = onSelectHotspot;
 
-  const style = useMemo<string | StyleSpecification>(
-    () => (MAP_STYLE_URL ? MAP_STYLE_URL : OSM_STYLE),
-    [],
-  );
+  const tileUrl = useMemo(() => MAP_STYLE_URL || OSM_TILES, []);
 
   /* ---------------------------------------------------------------------- */
   /* Initialise the map once                                                */
@@ -82,160 +76,164 @@ export function PollutionMap({
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
-    let map: MapLibreMap;
-    try {
-      map = new maplibregl.Map({
-        container: containerRef.current,
-        style,
-        center: DEFAULT_MAP_CENTER,
-        zoom: compact ? DEFAULT_MAP_ZOOM - 0.8 : DEFAULT_MAP_ZOOM,
-        attributionControl: { compact: true },
-      });
-    } catch {
-      // WebGL unavailable (older machine, headless browser, blocked context).
-      setFailed(true);
-      return;
-    }
+    const map = L.map(containerRef.current, {
+      center: [DEFAULT_MAP_CENTER[1], DEFAULT_MAP_CENTER[0]], // Leaflet is [lat, lng]
+      zoom: compact ? DEFAULT_MAP_ZOOM - 0.8 : DEFAULT_MAP_ZOOM,
+      zoomControl: false,
+      scrollWheelZoom: true,
+      attributionControl: true,
+    });
 
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
-    map.on("load", () => setReady(true));
-    map.on("error", () => setFailed(true));
+    L.control.zoom({ position: "topright" }).addTo(map);
+
+    const tiles = L.tileLayer(tileUrl, {
+      attribution: OSM_ATTRIBUTION,
+      maxZoom: 19,
+      crossOrigin: true,
+    });
+
+    tiles.on("tileerror", () => setTileError(true));
+    tiles.addTo(map);
+
+    layerGroupsRef.current = {
+      hotspots: L.layerGroup().addTo(map),
+      reports: L.layerGroup().addTo(map),
+      stations: L.layerGroup().addTo(map),
+    };
 
     mapRef.current = map;
+    setReady(true);
+
+    // The card animates in, so the container can be measured before it has its
+    // final size. Without this the tile grid renders into the wrong viewport.
+    const invalidate = () => map.invalidateSize();
+    const raf = requestAnimationFrame(invalidate);
+    const timer = window.setTimeout(invalidate, 250);
+
+    const observer =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(invalidate) : null;
+    if (observer && containerRef.current) observer.observe(containerRef.current);
 
     return () => {
-      markersRef.current.forEach((marker) => marker.remove());
-      markersRef.current = [];
+      cancelAnimationFrame(raf);
+      window.clearTimeout(timer);
+      observer?.disconnect();
       map.remove();
       mapRef.current = null;
+      layerGroupsRef.current = { hotspots: null, reports: null, stations: null };
     };
-  }, [style, compact]);
+  }, [tileUrl, compact]);
 
   /* ---------------------------------------------------------------------- */
-  /* Render markers whenever the data or layer visibility changes            */
+  /* Render markers whenever the data changes                               */
   /* ---------------------------------------------------------------------- */
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !ready) return;
+    const groups = layerGroupsRef.current;
+    if (!map || !ready || !groups.hotspots || !groups.reports || !groups.stations) return;
 
-    markersRef.current.forEach((marker) => marker.remove());
-    markersRef.current = [];
+    groups.hotspots.clearLayers();
+    groups.reports.clearLayers();
+    groups.stations.clearLayers();
 
-    const bounds = new maplibregl.LngLatBounds();
-    let hasPoint = false;
+    const bounds = L.latLngBounds([]);
 
-    // Monitoring stations (drawn first so they sit beneath hotspots) --------
-    if (visible.stations) {
-      for (const station of stations) {
-        const element = document.createElement("div");
-        element.style.cssText = [
-          "width:13px",
-          "height:13px",
-          "border-radius:3px",
-          "background:#1c6394",
-          "border:2px solid #fff",
-          "box-shadow:0 1px 3px rgba(16,33,34,.35)",
-          "cursor:pointer",
-        ].join(";");
-        element.setAttribute("aria-label", `Monitoring station: ${station.name}`);
+    // Monitoring stations ---------------------------------------------------
+    for (const station of stations) {
+      L.marker([station.latitude, station.longitude], {
+        icon: L.divIcon({
+          className: "map-pin-wrapper",
+          html: '<span class="map-pin map-pin-station"></span>',
+          iconSize: [13, 13],
+          iconAnchor: [6.5, 6.5],
+        }),
+        alt: `Monitoring station: ${station.name}`,
+      })
+        .bindPopup(stationPopup(station), { maxWidth: 300 })
+        .addTo(groups.stations);
 
-        const marker = new maplibregl.Marker({ element })
-          .setLngLat([station.longitude, station.latitude])
-          .setPopup(
-            new maplibregl.Popup({ offset: 14, maxWidth: "300px" }).setHTML(
-              stationPopup(station),
-            ),
-          )
-          .addTo(map);
-
-        markersRef.current.push(marker);
-        bounds.extend([station.longitude, station.latitude]);
-        hasPoint = true;
-      }
+      bounds.extend([station.latitude, station.longitude]);
     }
 
     // Citizen reports -------------------------------------------------------
-    if (visible.reports) {
-      for (const report of reports) {
-        const element = document.createElement("div");
-        element.style.cssText = [
-          "width:11px",
-          "height:11px",
-          "background:#4a5c61",
-          "border:2px solid #fff",
-          "transform:rotate(45deg)",
-          "box-shadow:0 1px 3px rgba(16,33,34,.3)",
-          "cursor:pointer",
-        ].join(";");
-        element.setAttribute("aria-label", `Citizen report at ${report.location_label}`);
+    for (const report of reports) {
+      L.marker([report.latitude, report.longitude], {
+        icon: L.divIcon({
+          className: "map-pin-wrapper",
+          html: '<span class="map-pin map-pin-report"></span>',
+          iconSize: [11, 11],
+          iconAnchor: [5.5, 5.5],
+        }),
+        alt: `Citizen report at ${report.location_label}`,
+      })
+        .bindPopup(reportPopup(report), { maxWidth: 300 })
+        .addTo(groups.reports);
 
-        const marker = new maplibregl.Marker({ element })
-          .setLngLat([report.longitude, report.latitude])
-          .setPopup(
-            new maplibregl.Popup({ offset: 14, maxWidth: "300px" }).setHTML(
-              reportPopup(report),
-            ),
-          )
-          .addTo(map);
+      bounds.extend([report.latitude, report.longitude]);
+    }
 
-        markersRef.current.push(marker);
-        bounds.extend([report.longitude, report.latitude]);
-        hasPoint = true;
+    // Hotspots (added last so they sit on top) ------------------------------
+    for (const hotspot of hotspots) {
+      const color = riskColor(hotspot.risk_level);
+      // Size encodes severity, so the eye is drawn to the worst first.
+      const size = 14 + Math.round((hotspot.risk_score / 100) * 14);
+
+      // Affected radius, drawn in real metres so it scales with zoom.
+      L.circle([hotspot.latitude, hotspot.longitude], {
+        radius: (hotspot.radius_km || 1) * 1000,
+        color,
+        weight: 1,
+        opacity: 0.45,
+        fillColor: color,
+        fillOpacity: 0.12,
+        interactive: false,
+      }).addTo(groups.hotspots);
+
+      const marker = L.marker([hotspot.latitude, hotspot.longitude], {
+        icon: L.divIcon({
+          className: "map-pin-wrapper",
+          html: `<span class="map-pin map-pin-hotspot" style="--pin-size:${size}px;--pin-color:${color}"></span>`,
+          iconSize: [size, size],
+          iconAnchor: [size / 2, size / 2],
+        }),
+        alt: `Hotspot: ${hotspot.location_label}, risk ${Math.round(
+          hotspot.risk_score,
+        )} of 100, ${hotspot.risk_level}`,
+        keyboard: true,
+        riseOnHover: true,
+      })
+        .bindPopup(hotspotPopup(hotspot), { maxWidth: 300 })
+        .addTo(groups.hotspots);
+
+      marker.on("click", () => selectRef.current?.(hotspot));
+      marker.on("keypress", () => selectRef.current?.(hotspot));
+
+      bounds.extend([hotspot.latitude, hotspot.longitude]);
+    }
+
+    if (bounds.isValid()) {
+      map.fitBounds(bounds, { padding: [56, 56], maxZoom: 12.5 });
+    }
+  }, [ready, hotspots, reports, stations]);
+
+  /* ---------------------------------------------------------------------- */
+  /* Layer visibility                                                       */
+  /* ---------------------------------------------------------------------- */
+  useEffect(() => {
+    const map = mapRef.current;
+    const groups = layerGroupsRef.current;
+    if (!map || !ready) return;
+
+    (Object.keys(groups) as LayerKey[]).forEach((key) => {
+      const group = groups[key];
+      if (!group) return;
+      if (visible[key]) {
+        if (!map.hasLayer(group)) group.addTo(map);
+      } else if (map.hasLayer(group)) {
+        map.removeLayer(group);
       }
-    }
-
-    // Hotspots (drawn last so they sit on top) ------------------------------
-    if (visible.hotspots) {
-      for (const hotspot of hotspots) {
-        const color = riskColor(hotspot.risk_level);
-        // Size encodes severity, so the eye is drawn to the worst first.
-        const size = 14 + Math.round((hotspot.risk_score / 100) * 14);
-
-        const element = document.createElement("div");
-        element.style.cssText = [
-          `width:${size}px`,
-          `height:${size}px`,
-          "border-radius:50%",
-          `background:${color}`,
-          "border:2.5px solid #fff",
-          `box-shadow:0 0 0 ${Math.round(size / 2)}px ${color}22, 0 2px 6px rgba(16,33,34,.35)`,
-          "cursor:pointer",
-        ].join(";");
-        element.setAttribute("role", "button");
-        element.setAttribute("tabindex", "0");
-        element.setAttribute(
-          "aria-label",
-          `Hotspot: ${hotspot.location_label}, risk ${Math.round(hotspot.risk_score)} of 100, ${hotspot.risk_level}`,
-        );
-
-        const marker = new maplibregl.Marker({ element })
-          .setLngLat([hotspot.longitude, hotspot.latitude])
-          .setPopup(
-            new maplibregl.Popup({ offset: size / 2 + 6, maxWidth: "300px" }).setHTML(
-              hotspotPopup(hotspot),
-            ),
-          )
-          .addTo(map);
-
-        const select = () => selectRef.current?.(hotspot);
-        element.addEventListener("click", select);
-        element.addEventListener("keydown", (event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            select();
-          }
-        });
-
-        markersRef.current.push(marker);
-        bounds.extend([hotspot.longitude, hotspot.latitude]);
-        hasPoint = true;
-      }
-    }
-
-    if (hasPoint && !bounds.isEmpty()) {
-      map.fitBounds(bounds, { padding: 64, maxZoom: 12.5, duration: 600 });
-    }
-  }, [ready, hotspots, reports, stations, visible]);
+    });
+  }, [visible, ready]);
 
   const toggle = (key: LayerKey) =>
     setVisible((current) => ({ ...current, [key]: !current[key] }));
@@ -244,90 +242,77 @@ export function PollutionMap({
     <div className={cn("map-shell", compact && "is-compact", className)}>
       <div ref={containerRef} className="map-canvas" />
 
-      {!failed ? (
-        <>
-          <div className="map-controls">
-            <button
-              type="button"
-              className={cn("map-layer-toggle", visible.hotspots && "is-active")}
-              onClick={() => toggle("hotspots")}
-              aria-pressed={visible.hotspots}
-            >
-              Hotspots ({hotspots.length})
-            </button>
-            <button
-              type="button"
-              className={cn("map-layer-toggle", visible.reports && "is-active")}
-              onClick={() => toggle("reports")}
-              aria-pressed={visible.reports}
-            >
-              Reports ({reports.length})
-            </button>
-            <button
-              type="button"
-              className={cn("map-layer-toggle", visible.stations && "is-active")}
-              onClick={() => toggle("stations")}
-              aria-pressed={visible.stations}
-            >
-              Stations ({stations.length})
-            </button>
-          </div>
+      <div className="map-controls">
+        <button
+          type="button"
+          className={cn("map-layer-toggle", visible.hotspots && "is-active")}
+          onClick={() => toggle("hotspots")}
+          aria-pressed={visible.hotspots}
+        >
+          Hotspots ({hotspots.length})
+        </button>
+        <button
+          type="button"
+          className={cn("map-layer-toggle", visible.reports && "is-active")}
+          onClick={() => toggle("reports")}
+          aria-pressed={visible.reports}
+        >
+          Reports ({reports.length})
+        </button>
+        <button
+          type="button"
+          className={cn("map-layer-toggle", visible.stations && "is-active")}
+          onClick={() => toggle("stations")}
+          aria-pressed={visible.stations}
+        >
+          Stations ({stations.length})
+        </button>
+      </div>
 
-          {wind ? (
-            <div className="map-wind">
-              <Navigation
-                className="map-wind-arrow"
-                size={16}
-                aria-hidden="true"
-                style={{ transform: `rotate(${wind.direction_deg}deg)` }}
-              />
-              <span>
-                <span className="map-wind-value">{wind.speed_ms.toFixed(1)} m/s</span>{" "}
-                <span className="map-wind-label">{wind.direction_compass}</span>
-              </span>
-            </div>
-          ) : null}
-
-          <div className="map-legend">
-            <p className="map-legend-title">Legend</p>
-            <div className="map-legend-items">
-              <span className="map-legend-item">
-                <span className="map-legend-swatch" style={{ background: "#b3372c" }} />
-                Critical hotspot
-              </span>
-              <span className="map-legend-item">
-                <span className="map-legend-swatch" style={{ background: "#c1611c" }} />
-                High hotspot
-              </span>
-              <span className="map-legend-item">
-                <span className="map-legend-swatch" style={{ background: "#a86a12" }} />
-                Moderate hotspot
-              </span>
-              <span className="map-legend-item">
-                <span className="map-legend-swatch is-station" />
-                Monitoring station
-              </span>
-              <span className="map-legend-item">
-                <span className="map-legend-swatch is-report" />
-                Citizen report
-              </span>
-            </div>
-          </div>
-        </>
+      {wind ? (
+        <div className="map-wind">
+          <Navigation
+            className="map-wind-arrow"
+            size={16}
+            aria-hidden="true"
+            style={{ transform: `rotate(${wind.direction_deg}deg)` }}
+          />
+          <span>
+            <span className="map-wind-value">{wind.speed_ms.toFixed(1)} m/s</span>{" "}
+            <span className="map-wind-label">{wind.direction_compass}</span>
+          </span>
+        </div>
       ) : null}
 
-      {failed ? (
-        <div className="map-overlay">
-          <p className="map-overlay-title">Map could not be displayed</p>
-          <p className="map-overlay-text">
-            The interactive map needs WebGL and access to the tile provider. Hotspot data is
-            still available in the table and detail panels below.
-          </p>
+      <div className="map-legend">
+        <p className="map-legend-title">Legend</p>
+        <div className="map-legend-items">
+          <span className="map-legend-item">
+            <span className="map-legend-swatch" style={{ background: "#b3372c" }} />
+            Critical hotspot
+          </span>
+          <span className="map-legend-item">
+            <span className="map-legend-swatch" style={{ background: "#c1611c" }} />
+            High hotspot
+          </span>
+          <span className="map-legend-item">
+            <span className="map-legend-swatch" style={{ background: "#a86a12" }} />
+            Moderate hotspot
+          </span>
+          <span className="map-legend-item">
+            <span className="map-legend-swatch is-station" />
+            Monitoring station
+          </span>
+          <span className="map-legend-item">
+            <span className="map-legend-swatch is-report" />
+            Citizen report
+          </span>
         </div>
-      ) : !ready ? (
-        <div className="map-overlay">
-          <span className="spinner" style={{ borderColor: "var(--muted)", borderTopColor: "transparent" }} />
-          <p className="map-overlay-text">Loading intelligence map…</p>
+      </div>
+
+      {tileError ? (
+        <div className="map-tile-warning" role="status">
+          Map tiles could not be loaded. Markers below are still positioned correctly.
         </div>
       ) : null}
     </div>
@@ -338,9 +323,9 @@ export function PollutionMap({
 /* Popup templates                                                            */
 /* -------------------------------------------------------------------------- */
 
-/** MapLibre popups take raw HTML, so all interpolated text is escaped. */
+/** Leaflet popups take raw HTML, so all interpolated text is escaped. */
 function escapeHtml(value: string): string {
-  return value
+  return String(value)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
@@ -379,8 +364,9 @@ function hotspotPopup(hotspot: Hotspot): string {
           <span class="map-popup-value">${formatNumber(hotspot.population_exposed)}</span>
         </div>
         <p class="map-popup-note">
-          Detected ${escapeHtml(timeAgo(hotspot.detected_at))} · ${escapeHtml(hotspot.data_mode)} value,
-          not a certified measurement.
+          Detected ${escapeHtml(timeAgo(hotspot.detected_at))} · ${escapeHtml(
+            hotspot.data_mode,
+          )} value, not a certified measurement.
         </p>
       </div>
     </div>`;
