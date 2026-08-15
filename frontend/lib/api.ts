@@ -277,7 +277,7 @@ export const demoApi = {
 /* -------------------------------------------------------------------------- */
 export const contactApi = {
   send: (payload: ContactPayload) =>
-    request<{ id: number; message: string }>("/api/contact", {
+    request<{ id: number; detail: string; created_at: string }>("/api/contact", {
       method: "POST",
       auth: false,
       body: payload,
