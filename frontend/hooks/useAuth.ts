@@ -7,7 +7,8 @@ import { authApi } from "@/lib/api";
 import {
   clearSession,
   getStoredUser,
-  getToken,
+  getValidToken,
+  millisecondsUntilExpiry,
   saveSession,
   subscribeToSession,
   updateStoredUser,
@@ -35,13 +36,32 @@ export function useAuth() {
   });
 
   const sync = useCallback(() => {
-    setState({ user: getStoredUser(), token: getToken(), loading: false });
+    // getValidToken() returns null once `exp` has passed, so an expired
+    // session reads as signed out without waiting for a failed request.
+    const token = getValidToken();
+    setState({ user: token ? getStoredUser() : null, token, loading: false });
   }, []);
 
   useEffect(() => {
     sync();
     return subscribeToSession(sync);
   }, [sync]);
+
+  // Re-evaluate exactly when the current token expires, so a long-open tab
+  // drops to the signed-out state on its own instead of waiting for the next
+  // navigation or API call.
+  useEffect(() => {
+    if (!state.token) return;
+
+    const remaining = millisecondsUntilExpiry(state.token);
+    // setTimeout clamps above ~24.8 days; the token expires long before that.
+    const timer = window.setTimeout(() => {
+      clearSession();
+      sync();
+    }, remaining + 250);
+
+    return () => window.clearTimeout(timer);
+  }, [state.token, sync]);
 
   const login = useCallback(
     async (email: string, password: string) => {

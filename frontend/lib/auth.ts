@@ -20,6 +20,71 @@ export function getToken(): string | null {
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* Token inspection                                                           */
+/* -------------------------------------------------------------------------- */
+
+interface JwtClaims {
+  sub?: string;
+  exp?: number;
+  iat?: number;
+  role?: string;
+  email?: string;
+}
+
+/**
+ * Read the claims out of a JWT without verifying it.
+ *
+ * The signature is the backend's business — this exists purely so the client
+ * can notice an expired session before firing a request that is certain to be
+ * rejected. Never trust these claims for an authorisation decision.
+ */
+export function decodeToken(token: string | null): JwtClaims | null {
+  if (!token) return null;
+  const parts = token.split(".");
+  if (parts.length !== 3) return null;
+
+  try {
+    // JWT uses base64url; atob needs standard base64 with padding.
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
+    return JSON.parse(atob(padded)) as JwtClaims;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * True when the token is absent, malformed, or past its `exp`.
+ *
+ * A small skew allowance stops a token that expires mid-flight from being
+ * treated as valid a moment before the server rejects it.
+ */
+export function isTokenExpired(token: string | null, skewSeconds = 10): boolean {
+  if (!token) return true;
+
+  const claims = decodeToken(token);
+  // Fail closed: a token we cannot decode, or one carrying no `exp`, is
+  // treated as expired. Anything else would let a malformed value through the
+  // dashboard guard only for every subsequent request to 401.
+  if (!claims?.exp) return true;
+
+  return claims.exp * 1000 <= Date.now() + skewSeconds * 1000;
+}
+
+/** The stored token, or null when it is missing or already expired. */
+export function getValidToken(): string | null {
+  const token = getToken();
+  return token && !isTokenExpired(token) ? token : null;
+}
+
+/** Milliseconds until the stored token expires; 0 when already expired. */
+export function millisecondsUntilExpiry(token: string | null): number {
+  const claims = decodeToken(token);
+  if (!claims?.exp) return 0;
+  return Math.max(0, claims.exp * 1000 - Date.now());
+}
+
 export function getStoredUser(): User | null {
   if (typeof window === "undefined") return null;
   try {

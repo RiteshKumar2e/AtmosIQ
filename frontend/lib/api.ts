@@ -6,7 +6,8 @@
  * `ApiError` unwraps that so every caller gets a readable message.
  */
 
-import { API_URL, TOKEN_KEY } from "@/lib/constants";
+import { clearSession, getToken, isTokenExpired } from "@/lib/auth";
+import { API_URL } from "@/lib/constants";
 import type {
   Alert,
   AlertStatus,
@@ -41,13 +42,22 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * The bearer token to send, if any.
+ *
+ * An already-expired token is dropped and the session cleared here rather than
+ * being sent: the request would fail regardless, and clearing early lets the
+ * dashboard guard redirect immediately instead of after a failed round trip.
+ */
 function readToken(): string | null {
-  if (typeof window === "undefined") return null;
-  try {
-    return window.localStorage.getItem(TOKEN_KEY);
-  } catch {
+  const token = getToken();
+  if (!token) return null;
+
+  if (isTokenExpired(token)) {
+    clearSession();
     return null;
   }
+  return token;
 }
 
 interface RequestOptions extends Omit<RequestInit, "body"> {
@@ -114,6 +124,16 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
       envelope?.message ??
       (typeof payload?.detail === "string" ? payload.detail : null) ??
       `Request failed with status ${response.status}`;
+
+    // The token was rejected: it is expired, revoked, or signed with a
+    // different key. Drop it so the app stops presenting a signed-in UI —
+    // `subscribeToSession` wakes every useAuth(), and AuthGuard redirects.
+    // Only for authenticated calls: a 401 from a public endpoint says nothing
+    // about the validity of the session.
+    if (response.status === 401 && auth) {
+      clearSession();
+    }
+
     throw new ApiError(response.status, message, envelope?.fields ?? []);
   }
 
