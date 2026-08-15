@@ -30,7 +30,7 @@ import hashlib
 import json
 import logging
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
 
@@ -260,6 +260,15 @@ def explain_offline(
     }
 
 
+#: Narrative explanations, keyed by location and risk band.
+#: The dashboard overview calls explain_risk on every page load, so without a
+#: cache each visit pays a full model round trip — and, once a quota is
+#: exhausted, a slow failing one. The narrative describes a coarse risk band
+#: for a place, which does not change meaningfully between requests.
+_EXPLANATION_CACHE: Dict[str, Tuple[float, Dict[str, Any]]] = {}
+_EXPLANATION_TTL_SECONDS = 600
+
+
 async def explain_risk(
     *,
     risk_score: float,
@@ -270,6 +279,39 @@ async def explain_risk(
     location_label: str,
 ) -> Dict[str, Any]:
     """Produce the explainability narrative + intervention recommendation."""
+    # Bucket the score so small fluctuations do not miss the cache.
+    cache_key = f"{location_label}|{risk_level}|{event_type}|{int(risk_score // 5)}"
+    cached = _EXPLANATION_CACHE.get(cache_key)
+    if cached and time.time() - cached[0] < _EXPLANATION_TTL_SECONDS:
+        return cached[1]
+
+    result = await _explain_risk_uncached(
+        risk_score=risk_score,
+        risk_level=risk_level,
+        contributions=contributions,
+        evidence=evidence,
+        event_type=event_type,
+        location_label=location_label,
+    )
+    _EXPLANATION_CACHE[cache_key] = (time.time(), result)
+
+    # Unbounded growth is a slow leak across 36 regions; trim oldest entries.
+    if len(_EXPLANATION_CACHE) > 256:
+        for key, _ in sorted(_EXPLANATION_CACHE.items(), key=lambda kv: kv[1][0])[:64]:
+            _EXPLANATION_CACHE.pop(key, None)
+
+    return result
+
+
+async def _explain_risk_uncached(
+    *,
+    risk_score: float,
+    risk_level: str,
+    contributions: List[Dict[str, Any]],
+    evidence: Dict[str, Any],
+    event_type: str,
+    location_label: str,
+) -> Dict[str, Any]:
     if settings.gemini_enabled:
         try:
             raw = await _call_gemini_explain(

@@ -132,9 +132,12 @@ class SQLiteDialect_libsql_https(SQLiteDialect_pysqlite):
     def create_connect_args(self, url):
         """Turn the SQLAlchemy URL into `libsql.connect(database, auth_token=…)`.
 
-        The token arrives as the `authToken` query parameter (that is the form
-        `sqlalchemy-libsql` documents) and is handed to the driver as a keyword
-        argument instead, so it never has to survive URL round-tripping.
+        Every statement is a request to the single remote Turso database. No
+        local copy exists, so there is exactly one source of truth.
+
+        The token arrives as the `authToken` query parameter (the form
+        `sqlalchemy-libsql` documents) and is passed as a keyword argument, so
+        it never has to survive URL round-tripping.
         """
         query = dict(url.query)
         auth_token = query.pop("authToken", None) or query.pop("auth_token", None)

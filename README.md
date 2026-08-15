@@ -353,15 +353,6 @@ Restart the backend — it rewrites `libsql://` into the `sqlite+libsql://` dial
 passes the token for you. Tables are created and seeded on first connect exactly as they are
 locally. Leave either value blank to fall back to the local file.
 
-The driver ships in `requirements.txt` (`libsql`). If the Turso engine cannot be constructed,
-the app logs the failure loudly and falls back to local SQLite rather than refusing to start.
-
-> **Why not `sqlalchemy-libsql`?** The published dialect speaks only the legacy Hrana
-> **WebSocket** protocol, which current Turso instances reject with HTTP 400 — it cannot
-> connect at all. `app/database/libsql_https.py` defines a small `sqlite+libsql_https`
-> dialect over the official `libsql` package, which talks to Turso over HTTPS. It inherits
-> SQLAlchemy's pysqlite dialect wholesale, so only the transport differs.
-
 ### Schema
 
 SQLite via SQLAlchemy, created and seeded automatically on first start.

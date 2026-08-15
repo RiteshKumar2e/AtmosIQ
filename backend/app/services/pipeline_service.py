@@ -15,6 +15,7 @@ a parallel mock.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import time
 from datetime import datetime, timedelta, timezone
@@ -677,9 +678,14 @@ def _maybe_create_alert(
 # --------------------------------------------------------------------------
 async def region_snapshot(db: Session, region) -> Dict[str, Any]:
     """Current fused state of a whole region, used by the overview + forecast."""
-    weather = await weather_service.get_weather(region.center_lat, region.center_lon)
-    air = await pollution_service.get_air_quality(region.center_lat, region.center_lon)
-    satellite = await satellite_service.get_features(region.center_lat, region.center_lon)
+    # These three providers are independent, so awaiting them in sequence just
+    # adds their latencies together (~3.8 s cold). Gathering them costs only
+    # the slowest one.
+    weather, air, satellite = await asyncio.gather(
+        weather_service.get_weather(region.center_lat, region.center_lon),
+        pollution_service.get_air_quality(region.center_lat, region.center_lon),
+        satellite_service.get_features(region.center_lat, region.center_lon),
+    )
 
     since = datetime.now(timezone.utc) - timedelta(hours=24)
     reports = db.scalars(

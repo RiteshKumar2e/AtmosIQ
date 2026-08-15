@@ -46,6 +46,7 @@ class Settings(BaseSettings):
     turso_database_url: str = ""   # e.g. libsql://atmosiq-org.turso.io
     turso_auth_token: str = ""
 
+
     cors_origins: List[str] = Field(
         default_factory=lambda: ["http://localhost:3000", "http://127.0.0.1:3000"]
     )
