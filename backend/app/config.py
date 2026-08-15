@@ -9,6 +9,7 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 from typing import List
+from urllib.parse import quote_plus
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -27,12 +28,19 @@ class Settings(BaseSettings):
 
     # --- Core ---------------------------------------------------------------
     app_env: str = "development"
-    app_name: str = "AeroShield BRICS API"
+    app_name: str = "AtmosIQ API"
     app_version: str = "1.0.0"
     secret_key: str = "change-me"
     access_token_expire_minutes: int = 60 * 12
 
-    database_url: str = f"sqlite:///{(BACKEND_DIR / 'aeroshield.db').as_posix()}"
+    # Local fallback. Overridden automatically when Turso credentials exist.
+    database_url: str = f"sqlite:///{(BACKEND_DIR / 'atmosiq.db').as_posix()}"
+
+    # --- Turso / libSQL -----------------------------------------------------
+    # Set both to run against Turso. The libSQL dialect speaks SQLite, so every
+    # model, query, and migration is identical to the local file database.
+    turso_database_url: str = ""   # e.g. libsql://atmosiq-org.turso.io
+    turso_auth_token: str = ""
 
     cors_origins: List[str] = Field(
         default_factory=lambda: ["http://localhost:3000", "http://127.0.0.1:3000"]
@@ -68,6 +76,42 @@ class Settings(BaseSettings):
         return value
 
     # --- Derived ------------------------------------------------------------
+    @property
+    def turso_enabled(self) -> bool:
+        return bool(self.turso_database_url.strip() and self.turso_auth_token.strip())
+
+    @property
+    def resolved_database_url(self) -> str:
+        """The SQLAlchemy URL the engine actually uses.
+
+        Turso wins when configured, so deploying to it is purely an environment
+        change — no code path differs. A `libsql://` host is rewritten into the
+        `sqlite+libsql://` dialect URL that SQLAlchemy expects, with the auth
+        token passed as a query parameter.
+        """
+        if not self.turso_enabled:
+            return self.database_url
+
+        host = self.turso_database_url.strip()
+        for prefix in ("libsql://", "https://", "wss://", "sqlite+libsql://"):
+            if host.startswith(prefix):
+                host = host[len(prefix):]
+                break
+        host = host.rstrip("/")
+        token = quote_plus(self.turso_auth_token.strip())
+        return f"sqlite+libsql://{host}/?authToken={token}&secure=true"
+
+    @property
+    def database_backend(self) -> str:
+        """Human-readable backend name for /api/health."""
+        if self.turso_enabled:
+            return "turso-libsql"
+        if self.database_url.startswith("sqlite"):
+            return "sqlite"
+        if self.database_url.startswith("postgresql"):
+            return "postgresql"
+        return "unknown"
+
     @property
     def gemini_enabled(self) -> bool:
         return bool(self.google_gemini_api_key.strip())

@@ -1,11 +1,19 @@
 """Database engine / session factory.
 
-SQLite is used for the prototype. Swapping `DATABASE_URL` to a PostgreSQL DSN
-is the only change required for a production deployment — no ORM code changes.
+Three backends are supported through configuration alone, with no ORM changes:
+
+  * local SQLite file  — the zero-setup default
+  * Turso (libSQL)     — set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN
+  * PostgreSQL         — set DATABASE_URL to a postgresql+psycopg DSN
+
+Turso speaks the SQLite dialect over the network, so every model, query, and
+index defined against the local file works unchanged against the hosted
+database.
 """
 
 from __future__ import annotations
 
+import logging
 from typing import Generator
 
 from sqlalchemy import create_engine
@@ -13,19 +21,46 @@ from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.config import settings
 
+logger = logging.getLogger("atmosiq.database")
+
 
 class Base(DeclarativeBase):
     pass
 
 
-_is_sqlite = settings.database_url.startswith("sqlite")
+DATABASE_URL = settings.resolved_database_url
 
-engine = create_engine(
-    settings.database_url,
-    connect_args={"check_same_thread": False} if _is_sqlite else {},
-    pool_pre_ping=True,
-    future=True,
-)
+_is_remote_libsql = DATABASE_URL.startswith("sqlite+libsql")
+_is_local_sqlite = DATABASE_URL.startswith("sqlite:")
+
+_connect_args: dict = {}
+_engine_kwargs: dict = {"pool_pre_ping": True, "future": True}
+
+if _is_local_sqlite:
+    # FastAPI serves requests from a thread pool; a local SQLite connection is
+    # otherwise pinned to its creating thread.
+    _connect_args["check_same_thread"] = False
+elif _is_remote_libsql:
+    # Turso is a network database. Keep the pool small and recycle connections
+    # so a dropped socket is replaced rather than reused.
+    _engine_kwargs.update(pool_size=5, max_overflow=5, pool_recycle=280)
+
+try:
+    engine = create_engine(DATABASE_URL, connect_args=_connect_args, **_engine_kwargs)
+except Exception:
+    if not _is_remote_libsql:
+        raise
+    # Never let a Turso misconfiguration take the whole application down —
+    # fall back to the local file and say so loudly.
+    logger.exception(
+        "Could not create the Turso engine. Falling back to the local SQLite "
+        "database. Check TURSO_DATABASE_URL / TURSO_AUTH_TOKEN, and confirm "
+        "`sqlalchemy-libsql` is installed."
+    )
+    engine = create_engine(
+        settings.database_url, connect_args={"check_same_thread": False},
+        pool_pre_ping=True, future=True,
+    )
 
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
 
