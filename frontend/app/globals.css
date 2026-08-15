@@ -1,0 +1,37 @@
+/* ==========================================================================
+   AtmosIQ — global stylesheet entrypoint.
+
+   All real styling lives in `styles/`. This file only wires Tailwind's layout
+   utilities together with the design system and the page stylesheets, in
+   cascade order: tokens -> shared components -> pages -> responsive overrides.
+   ========================================================================== */
+
+@import "../styles/globals.css";
+@import "../styles/components.css";
+@import "../styles/navbar.css";
+@import "../styles/landing.css";
+@import "../styles/about.css";
+@import "../styles/features.css";
+@import "../styles/how-it-works.css";
+@import "../styles/contact.css";
+@import "../styles/auth.css";
+@import "../styles/dashboard.css";
+@import "../styles/intelligence.css";
+@import "../styles/hotspots.css";
+@import "../styles/reports.css";
+@import "../styles/forecast.css";
+@import "../styles/alerts.css";
+@import "../styles/analytics.css";
+@import "../styles/brics-network.css";
+@import "../styles/settings.css";
+@import "../styles/map.css";
+
+/* MapLibre's own stylesheet, required for map controls and popups. */
+@import "maplibre-gl/dist/maplibre-gl.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Responsive rules load last so their breakpoints win. */
+@import "../styles/responsive.css";

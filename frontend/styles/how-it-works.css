@@ -1,0 +1,293 @@
+/* ==========================================================================
+   How It Works page — pipeline and technical architecture
+   ========================================================================== */
+
+.hiw-pipeline {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.hiw-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  gap: 26px;
+  padding-block: 26px;
+}
+
+/* Vertical rail connecting the pipeline stages. */
+.hiw-step:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 37px;
+  top: 76px;
+  bottom: -10px;
+  width: 2px;
+  background: linear-gradient(180deg, var(--primary-border), var(--border));
+}
+
+.hiw-step-number {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  border-radius: var(--radius-full);
+  background: var(--card);
+  border: 2px solid var(--primary-border);
+  box-shadow: var(--shadow-sm);
+  align-self: start;
+}
+
+.hiw-step-number-value {
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1;
+}
+
+.hiw-step-number-icon {
+  color: var(--primary);
+  margin-bottom: 2px;
+}
+
+.hiw-step-body {
+  padding-top: 6px;
+}
+
+.hiw-step-title {
+  font-size: var(--text-xl);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  margin-bottom: 9px;
+}
+
+.hiw-step-text {
+  font-size: var(--text-md);
+  color: var(--muted-strong);
+  line-height: 1.72;
+  margin-bottom: 16px;
+  max-width: 720px;
+}
+
+.hiw-step-detail {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  max-width: 760px;
+}
+
+.hiw-detail-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--card);
+  border: 1px solid var(--border);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: var(--foreground-soft);
+}
+
+.hiw-detail-item svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--primary);
+}
+
+.hiw-step-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+@media (max-width: 640px) {
+  .hiw-step:not(:last-child)::before {
+    display: none;
+  }
+  .hiw-step-detail {
+    grid-template-columns: 1fr;
+  }
+  .hiw-step-number {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Technical architecture
+   -------------------------------------------------------------------------- */
+.hiw-architecture-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.arch-layer {
+  padding: 24px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+}
+
+.arch-layer-head {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 16px;
+  padding-bottom: 13px;
+  border-bottom: 1px solid var(--border);
+}
+
+.arch-layer-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius);
+  background: var(--information-soft);
+  color: var(--information);
+  flex-shrink: 0;
+}
+
+.arch-layer-title {
+  font-size: var(--text-md);
+  font-weight: 650;
+}
+
+.arch-layer-subtitle {
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+.arch-items {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.arch-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: var(--text-sm);
+  color: var(--foreground-soft);
+}
+
+.arch-item-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--primary);
+  flex-shrink: 0;
+}
+
+.arch-item code {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--background-alt);
+  border: 1px solid var(--border);
+  color: var(--muted-strong);
+}
+
+/* Data flow diagram ------------------------------------------------------- */
+.dataflow {
+  padding: 32px;
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-xs);
+  overflow-x: auto;
+}
+
+.dataflow-track {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  min-width: 720px;
+}
+
+.dataflow-node {
+  flex: 1;
+  padding: 16px 14px;
+  border-radius: var(--radius);
+  background: var(--card-muted);
+  border: 1px solid var(--border);
+  text-align: center;
+}
+
+.dataflow-node-label {
+  font-size: var(--text-sm);
+  font-weight: 650;
+  margin-bottom: 3px;
+}
+
+.dataflow-node-meta {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--muted);
+}
+
+.dataflow-arrow {
+  padding-inline: 10px;
+  color: var(--border-strong);
+  flex-shrink: 0;
+}
+
+/* Guarantees -------------------------------------------------------------- */
+.guarantee-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.guarantee-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+
+.guarantee-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius);
+  background: var(--secondary-soft);
+  color: var(--secondary);
+  flex-shrink: 0;
+}
+
+.guarantee-card h3 {
+  font-size: var(--text-base);
+  margin-bottom: 4px;
+}
+
+.guarantee-card p {
+  font-size: var(--text-sm);
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+@media (max-width: 900px) {
+  .guarantee-grid {
+    grid-template-columns: 1fr;
+  }
+  .dataflow {
+    padding: 20px;
+  }
+}

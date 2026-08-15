@@ -1,0 +1,221 @@
+/* ==========================================================================
+   BRICS Network page
+   ========================================================================== */
+
+.brics-country-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.brics-node-card {
+  padding: 22px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  transition: box-shadow var(--duration) var(--ease),
+    border-color var(--duration) var(--ease);
+}
+
+.brics-node-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-border);
+}
+
+.brics-node-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.brics-node-flag {
+  font-size: 1.9rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.brics-node-name {
+  font-size: var(--text-md);
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.brics-node-region {
+  font-size: var(--text-xs);
+  color: var(--muted);
+  font-family: var(--font-mono);
+}
+
+.brics-node-status {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.brics-node-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.brics-node-metric-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+
+.brics-node-metric-value {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+
+.brics-node-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 13px;
+  border-top: 1px solid var(--border);
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+/* Federated architecture -------------------------------------------------- */
+.federation-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-width: 760px;
+  margin-inline: auto;
+}
+
+.federation-layer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 22px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+}
+
+.federation-connector {
+  display: grid;
+  place-items: center;
+  height: 26px;
+  color: var(--border-strong);
+}
+
+.federation-layer-index {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius);
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.federation-layer-title {
+  font-size: var(--text-md);
+  font-weight: 650;
+  margin-bottom: 2px;
+}
+
+.federation-layer-text {
+  font-size: var(--text-sm);
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* Highlight the boundary where data stops being local. */
+.federation-layer.is-boundary {
+  border-color: var(--primary-border);
+  background: var(--primary-soft);
+}
+
+/* Principles -------------------------------------------------------------- */
+.principle-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.principle-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+
+.principle-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius);
+  background: var(--secondary-soft);
+  color: var(--secondary);
+  flex-shrink: 0;
+}
+
+.principle-card h3 {
+  font-size: var(--text-base);
+  margin-bottom: 4px;
+}
+
+.principle-card p {
+  font-size: var(--text-sm);
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+/* Shared schema ----------------------------------------------------------- */
+.schema-block {
+  padding: 20px;
+  border-radius: var(--radius);
+  background: #10201f;
+  overflow-x: auto;
+}
+
+.schema-block pre {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1.75;
+  color: #b9c8c6;
+  white-space: pre;
+}
+
+.schema-block .schema-key {
+  color: #7fd0be;
+}
+
+@media (max-width: 900px) {
+  .principle-grid {
+    grid-template-columns: 1fr;
+  }
+  .federation-layer {
+    padding: 16px;
+  }
+}

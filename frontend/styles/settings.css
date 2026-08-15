@@ -1,0 +1,178 @@
+/* ==========================================================================
+   Settings page
+   ========================================================================== */
+
+.settings-layout {
+  display: grid;
+  grid-template-columns: 208px 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+.settings-nav {
+  position: sticky;
+  top: calc(var(--header-height) + 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: var(--radius);
+  font-size: var(--text-base);
+  font-weight: 550;
+  color: var(--muted-strong);
+  text-align: left;
+  width: 100%;
+  transition: background var(--duration) var(--ease), color var(--duration) var(--ease);
+}
+
+.settings-nav-link:hover {
+  background: var(--background-alt);
+  color: var(--foreground);
+}
+
+.settings-nav-link.is-active {
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: 650;
+}
+
+.settings-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+/* Toggle rows ------------------------------------------------------------- */
+.settings-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-toggle-row:last-child {
+  border-bottom: none;
+}
+
+.settings-toggle-label {
+  font-size: var(--text-base);
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.settings-toggle-text {
+  font-size: var(--text-sm);
+  color: var(--muted);
+  line-height: 1.6;
+  max-width: 520px;
+}
+
+/* Profile identity -------------------------------------------------------- */
+.settings-identity {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 22px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-avatar {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-full);
+  background: var(--primary);
+  color: #fff;
+  font-size: var(--text-xl);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.settings-identity-name {
+  font-size: var(--text-lg);
+  font-weight: 650;
+}
+
+.settings-identity-meta {
+  font-size: var(--text-sm);
+  color: var(--muted);
+  word-break: break-word;
+}
+
+/* Danger zone ------------------------------------------------------------- */
+.settings-danger {
+  padding: 20px;
+  border-radius: var(--radius);
+  background: var(--danger-soft);
+  border: 1px solid #f1c9c5;
+}
+
+.settings-danger-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--text-base);
+  font-weight: 650;
+  color: var(--danger);
+  margin-bottom: 6px;
+}
+
+.settings-danger-text {
+  font-size: var(--text-sm);
+  color: #8f2c23;
+  line-height: 1.65;
+  margin-bottom: 14px;
+}
+
+.settings-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 20px;
+  margin-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 900px) {
+  .settings-layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .settings-nav {
+    position: static;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 6px;
+    padding-bottom: 6px;
+    scrollbar-width: none;
+  }
+
+  .settings-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .settings-nav-link {
+    white-space: nowrap;
+    width: auto;
+    border: 1px solid var(--border);
+  }
+}

@@ -1,0 +1,192 @@
+/* ==========================================================================
+   Analytics page
+   ========================================================================== */
+
+.analytics-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.analytics-grid-3 {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 1024px) {
+  .analytics-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Source breakdown -------------------------------------------------------- */
+.source-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.source-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.source-row-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.source-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.source-swatch {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.source-stats {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: var(--text-sm);
+  flex-shrink: 0;
+}
+
+.source-share {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.source-count {
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+/* Coverage ---------------------------------------------------------------- */
+.coverage-headline {
+  padding: 18px 20px;
+  border-radius: var(--radius);
+  background: var(--primary-soft);
+  border: 1px solid var(--primary-border);
+  font-size: var(--text-sm);
+  line-height: 1.7;
+  color: var(--foreground-soft);
+  margin-bottom: 20px;
+}
+
+.coverage-headline strong {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+/* Region distribution ----------------------------------------------------- */
+.distribution-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.distribution-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.distribution-row:last-child {
+  border-bottom: none;
+}
+
+.distribution-name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.distribution-metrics {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-shrink: 0;
+}
+
+.distribution-metric {
+  text-align: right;
+  min-width: 54px;
+}
+
+.distribution-metric-value {
+  font-size: var(--text-base);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.distribution-metric-label {
+  font-size: 0.6875rem;
+  color: var(--muted);
+}
+
+/* Insight strip ----------------------------------------------------------- */
+.insight-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.insight-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px;
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+
+.insight-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius);
+  background: var(--information-soft);
+  color: var(--information);
+  flex-shrink: 0;
+}
+
+.insight-title {
+  font-size: var(--text-sm);
+  font-weight: 650;
+  margin-bottom: 3px;
+}
+
+.insight-text {
+  font-size: var(--text-xs);
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+@media (max-width: 900px) {
+  .insight-grid {
+    grid-template-columns: 1fr;
+  }
+}

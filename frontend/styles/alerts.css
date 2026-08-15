@@ -1,0 +1,216 @@
+/* ==========================================================================
+   Alerts page
+   ========================================================================== */
+
+.alert-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.alert-card {
+  position: relative;
+  padding: 20px 22px 20px 24px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  transition: box-shadow var(--duration) var(--ease);
+}
+
+.alert-card:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+/* Severity rail — instantly scannable in a long alert queue. */
+.alert-card::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: 4px;
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+  background: var(--severity-color, var(--muted));
+}
+
+.alert-card.is-resolved {
+  opacity: 0.72;
+  background: var(--card-muted);
+}
+
+.alert-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.alert-title {
+  font-size: var(--text-md);
+  font-weight: 650;
+  line-height: 1.4;
+  margin-bottom: 6px;
+}
+
+.alert-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+.alert-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.alert-risk {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.alert-risk-value {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--severity-color, var(--foreground));
+}
+
+.alert-risk-label {
+  font-size: var(--text-xs);
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.alert-description {
+  font-size: var(--text-sm);
+  color: var(--muted-strong);
+  line-height: 1.68;
+  margin-bottom: 14px;
+}
+
+.alert-recommendation {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 13px 15px;
+  border-radius: var(--radius);
+  background: var(--card-muted);
+  border: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+
+.alert-recommendation svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--primary);
+}
+
+.alert-recommendation-label {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.alert-recommendation-text {
+  font-size: var(--text-sm);
+  line-height: 1.68;
+  color: var(--foreground-soft);
+}
+
+.alert-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.alert-actions-spacer {
+  flex: 1;
+}
+
+.alert-assignee {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+/* Status chip ------------------------------------------------------------- */
+.alert-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 650;
+  border: 1px solid transparent;
+}
+
+.alert-status.is-new {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: #f1c9c5;
+}
+.alert-status.is-acknowledged {
+  background: var(--warning-soft);
+  color: var(--warning);
+  border-color: #f0dcb6;
+}
+.alert-status.is-assigned {
+  background: var(--information-soft);
+  color: var(--information);
+  border-color: #c6dcec;
+}
+.alert-status.is-resolved {
+  background: var(--success-soft);
+  color: var(--success);
+  border-color: #c2e3d1;
+}
+.alert-status.is-dismissed {
+  background: var(--background-alt);
+  color: var(--muted);
+  border-color: var(--border);
+}
+
+@media (max-width: 900px) {
+  .alert-summary-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .alert-card-head {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .alert-risk {
+    text-align: left;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .alert-actions .btn {
+    flex: 1;
+  }
+}
