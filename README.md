@@ -113,7 +113,7 @@ Citizen → FastAPI (POST /api/reports) → Gemini → Risk Engine → Hotspot �
 - Tailwind CSS for layout utilities; all page styling in `frontend/styles/*.css`
 - shadcn/ui-pattern primitives built on Radix UI
 - TanStack Query (server state) · React Hook Form + Zod (forms)
-- MapLibre GL JS (intelligence map) · Recharts (trends and forecast) · Lucide React (icons)
+- Leaflet (intelligence map) · Recharts (trends and forecast) · Lucide React (icons)
 
 **Backend**
 
@@ -192,8 +192,9 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 NEXT_PUBLIC_MAP_STYLE_URL=
 ```
 
-Leaving `NEXT_PUBLIC_MAP_STYLE_URL` blank uses a built-in OpenStreetMap raster style that
-needs no API key.
+`NEXT_PUBLIC_MAP_STYLE_URL` is an optional Leaflet raster tile template (for example
+`https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=…`). Leaving it blank uses
+OpenStreetMap tiles, which need no API key.
 
 **`backend/.env.example`**
 

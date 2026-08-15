@@ -26,8 +26,8 @@
 @import "../styles/settings.css";
 @import "../styles/map.css";
 
-/* MapLibre's own stylesheet, required for map controls and popups. */
-@import "maplibre-gl/dist/maplibre-gl.css";
+/* Leaflet's own stylesheet, required for tile positioning, controls and popups. */
+@import "leaflet/dist/leaflet.css";
 
 @tailwind base;
 @tailwind components;
