@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -12,12 +14,15 @@ from app.database.session import get_db
 from app.models.models import User
 from app.schemas.schemas import (
     DemoLoginRequest,
+    ForgotPasswordRequest,
     TokenResponse,
     UserLogin,
     UserOut,
     UserRegister,
 )
 from app.utils.security import create_access_token, hash_password, verify_password
+
+logger = logging.getLogger("aeroshield.auth")
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
@@ -115,6 +120,34 @@ def demo_login(payload: DemoLoginRequest, db: Session = Depends(get_db)) -> Toke
         db.commit()
         db.refresh(user)
     return _issue(user)
+
+
+@router.post("/forgot-password")
+def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db)) -> dict:
+    """Begin a password reset.
+
+    Prototype limitation: no email is dispatched. A scoped reset token is
+    written to the backend log instead. The response is identical whether or
+    not the address is registered, so this cannot be used to enumerate accounts.
+    """
+    email = payload.email.lower().strip()
+    user = db.scalars(select(User).where(User.email == email)).first()
+
+    if user is not None:
+        token = create_access_token(
+            subject=str(user.id), extra={"scope": "password_reset", "email": user.email}
+        )
+        logger.info(
+            "[PROTOTYPE] Password reset requested for %s. Reset token: %s", user.email, token
+        )
+
+    return {
+        "detail": "If an account exists for that address, reset instructions have been sent.",
+        "note": (
+            "Prototype limitation: email delivery is simulated. The reset link is written "
+            "to the backend log instead of being dispatched."
+        ),
+    }
 
 
 @router.get("/me", response_model=UserOut)

@@ -76,6 +76,10 @@ class DemoLoginRequest(BaseModel):
     role: Literal["authority", "analyst", "citizen"]
 
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
 # --------------------------------------------------------------------------
 # Reports
 # --------------------------------------------------------------------------
@@ -444,6 +448,23 @@ class DemoScenarioOut(BaseModel):
     forecast: ForecastOut
     ai_provider: str
     total_ms: int
+
+
+# --------------------------------------------------------------------------
+# Contact
+# --------------------------------------------------------------------------
+class ContactCreate(BaseModel):
+    full_name: str = Field(min_length=2, max_length=120)
+    email: EmailStr
+    organization: Optional[str] = Field(default=None, max_length=160)
+    subject: str = Field(min_length=3, max_length=200)
+    message: str = Field(min_length=10, max_length=4000)
+
+
+class ContactOut(BaseModel):
+    id: int
+    detail: str
+    created_at: datetime
 
 
 AnalyzeResponse.model_rebuild()

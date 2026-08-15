@@ -253,3 +253,17 @@ class PollutionRecord(Base):
     report_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     dominant_source: Mapped[str] = mapped_column(String(48), default="traffic", nullable=False)
     data_mode: Mapped[str] = mapped_column(String(16), default="SIMULATED", nullable=False)
+
+
+class ContactMessage(Base, TimestampMixin):
+    """Enquiry submitted through the public contact page."""
+
+    __tablename__ = "contact_messages"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    full_name: Mapped[str] = mapped_column(String(120), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    organization: Mapped[Optional[str]] = mapped_column(String(160), nullable=True)
+    subject: Mapped[str] = mapped_column(String(200), nullable=False)
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    handled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)

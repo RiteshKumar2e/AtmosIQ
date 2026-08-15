@@ -16,7 +16,17 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.api import alerts, analytics, auth, brics, demo, forecast, hotspots, reports
+from app.api import (
+    alerts,
+    analytics,
+    auth,
+    brics,
+    contact,
+    demo,
+    forecast,
+    hotspots,
+    reports,
+)
 from app.config import settings
 from app.database.session import engine, init_db
 from app.schemas.schemas import HealthOut
@@ -103,6 +113,7 @@ app = FastAPI(
         {"name": "Analytics", "description": "KPIs, trends, coverage, and responsible-AI disclosure"},
         {"name": "BRICS Network", "description": "Cross-border interoperability layer"},
         {"name": "Demo Scenario", "description": "Scripted end-to-end demonstration"},
+        {"name": "Contact", "description": "Public enquiry intake"},
         {"name": "System", "description": "Health and diagnostics"},
     ],
 )
@@ -191,6 +202,7 @@ app.include_router(alerts.router)
 app.include_router(analytics.router)
 app.include_router(brics.router)
 app.include_router(demo.router)
+app.include_router(contact.router)
 
 
 @app.get("/api/health", response_model=HealthOut, tags=["System"])

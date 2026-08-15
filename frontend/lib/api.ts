@@ -157,6 +157,13 @@ export const authApi = {
       body: { role },
     }),
 
+  forgotPassword: (email: string) =>
+    request<{ detail: string; note?: string }>("/api/auth/forgot-password", {
+      method: "POST",
+      auth: false,
+      body: { email },
+    }),
+
   me: () => request<User>("/api/auth/me"),
 
   logout: () => request<{ detail: string }>("/api/auth/logout", { method: "POST" }),
