@@ -334,12 +334,17 @@ export default function BricsNetworkPage() {
           <CardBody>
             <div className="principle-grid">
               {data.interoperability_layers.map((layer) => (
-                <article className="principle-card" key={layer.title}>
+                <article className="principle-card" key={layer.layer ?? layer.name}>
                   <span className="principle-icon" aria-hidden="true">
-                    <Layers size={18} />
+                    {/* The layers are an ordered stack, so show the position. */}
+                    {layer.layer ? (
+                      <span className="principle-index">{layer.layer}</span>
+                    ) : (
+                      <Layers size={18} />
+                    )}
                   </span>
                   <div>
-                    <h3>{layer.title}</h3>
+                    <h3>{layer.name}</h3>
                     <p>{layer.detail}</p>
                   </div>
                 </article>

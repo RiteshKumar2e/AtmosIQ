@@ -179,6 +179,14 @@
   flex-shrink: 0;
 }
 
+/* Ordinal for the interoperability stack, which is a numbered sequence. */
+.principle-index {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  line-height: 1;
+}
+
 .principle-card h3 {
   font-size: var(--text-base);
   margin-bottom: 4px;

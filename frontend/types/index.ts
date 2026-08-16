@@ -369,7 +369,8 @@ export interface BricsOverview {
   nodes: BricsNode[];
   shared_schema: Record<string, any>;
   federation_principles: { title: string; detail: string }[];
-  interoperability_layers: { title: string; detail: string }[];
+  /** Note the field names differ from `federation_principles` — see /api/brics/overview. */
+  interoperability_layers: { layer: string; name: string; detail: string }[];
   aggregate: Record<string, any>;
   generated_at: string;
   data_mode: DataMode;
