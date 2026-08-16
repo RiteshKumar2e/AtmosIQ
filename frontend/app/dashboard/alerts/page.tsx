@@ -41,6 +41,30 @@ import type { Alert, AlertStatus } from "@/types";
 
 const STATUS_OPTIONS = ["NEW", "ACKNOWLEDGED", "ASSIGNED", "RESOLVED", "DISMISSED"];
 
+/**
+ * Legal next states, mirroring `_TRANSITIONS` in `backend/app/api/alerts.py`.
+ *
+ * The lifecycle is enforced server-side and returns 409 for an illegal move —
+ * notably NEW → RESOLVED, because an alert nobody acknowledged should not be
+ * closed. Offering a button the API will reject is a broken affordance, so the
+ * action row is derived from this map instead of being hardcoded.
+ */
+const ALERT_TRANSITIONS: Record<string, AlertStatus[]> = {
+  NEW: ["ACKNOWLEDGED", "ASSIGNED", "DISMISSED"],
+  ACKNOWLEDGED: ["ASSIGNED", "RESOLVED", "DISMISSED"],
+  ASSIGNED: ["RESOLVED", "ACKNOWLEDGED", "DISMISSED"],
+  RESOLVED: [],
+  DISMISSED: ["NEW"],
+};
+
+const ACTION_LABELS: Record<string, string> = {
+  ACKNOWLEDGED: "Acknowledge",
+  ASSIGNED: "Assign",
+  RESOLVED: "Resolve",
+  DISMISSED: "Dismiss",
+  NEW: "Reopen",
+};
+
 export default function AlertsPage() {
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -263,35 +287,39 @@ export default function AlertsPage() {
 
               <div className="alert-actions">
                 {canAct ? (
-                  <>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      disabled={alert.status !== "NEW" || update.isPending}
-                      onClick={() => act(alert, "ACKNOWLEDGED")}
-                    >
-                      Acknowledge
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      disabled={alert.status === "RESOLVED" || update.isPending}
-                      onClick={() => {
-                        setAssigning(alert);
-                        setAssignee(alert.assigned_to ?? "");
-                      }}
-                    >
-                      Assign
-                    </Button>
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      disabled={alert.status === "RESOLVED" || update.isPending}
-                      onClick={() => act(alert, "RESOLVED")}
-                    >
-                      Resolve
-                    </Button>
-                  </>
+                  (() => {
+                    const allowed = ALERT_TRANSITIONS[alert.status] ?? [];
+                    if (!allowed.length) {
+                      return (
+                        <span
+                          className="text-muted"
+                          style={{ fontSize: "var(--text-xs)" }}
+                        >
+                          This alert is resolved. No further action is available.
+                        </span>
+                      );
+                    }
+
+                    return allowed.map((next) => (
+                      <Button
+                        key={next}
+                        // Resolve is the terminal, deliberate action.
+                        variant={next === "RESOLVED" ? "primary" : "secondary"}
+                        size="sm"
+                        disabled={update.isPending}
+                        onClick={() => {
+                          if (next === "ASSIGNED") {
+                            setAssigning(alert);
+                            setAssignee(alert.assigned_to ?? "");
+                          } else {
+                            act(alert, next);
+                          }
+                        }}
+                      >
+                        {ACTION_LABELS[next] ?? titleCase(next)}
+                      </Button>
+                    ));
+                  })()
                 ) : (
                   <span className="text-muted" style={{ fontSize: "var(--text-xs)" }}>
                     Sign in as an analyst or authority to act on this alert.
