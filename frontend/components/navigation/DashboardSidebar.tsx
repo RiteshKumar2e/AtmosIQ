@@ -1,5 +1,6 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import {
   BarChart3,
   BellRing,
@@ -20,6 +21,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useAuth } from "@/hooks/useAuth";
+import { useRegion } from "@/hooks/useRegion";
+import { alertsApi } from "@/lib/api";
 import { APP_NAME, DASHBOARD_NAV } from "@/lib/constants";
 import { cn, initials } from "@/lib/utils";
 
@@ -38,14 +41,30 @@ const ICONS: Record<string, LucideIcon> = {
 export function DashboardSidebar({
   open,
   onClose,
-  criticalAlerts,
 }: {
   open: boolean;
   onClose: () => void;
-  criticalAlerts?: number;
 }) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { regionCode } = useRegion();
+
+  /**
+   * Alerts still awaiting a first response in the selected region.
+   *
+   * Scoped by region and keyed on it, so switching state updates the badge
+   * instead of showing a network-wide total that never changes. Acting on an
+   * alert invalidates the `["alerts"]` prefix, which refetches this too.
+   */
+  const { data: pendingAlerts } = useQuery({
+    queryKey: ["alerts", "pending-count", regionCode],
+    queryFn: () => alertsApi.list({ status: "NEW", limit: 200, region_code: regionCode }),
+    enabled: Boolean(regionCode),
+    retry: false,
+    refetchInterval: 120_000,
+  });
+
+  const pendingCount = pendingAlerts?.length ?? 0;
 
   const isActive = (href: string) =>
     href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
@@ -79,7 +98,7 @@ export function DashboardSidebar({
           <p className="sidebar-section-label">Intelligence</p>
           {DASHBOARD_NAV.map((item) => {
             const Icon = ICONS[item.icon] ?? LayoutDashboard;
-            const showBadge = item.href === "/dashboard/alerts" && (criticalAlerts ?? 0) > 0;
+            const showBadge = item.href === "/dashboard/alerts" && pendingCount > 0;
 
             return (
               <Link
@@ -92,8 +111,12 @@ export function DashboardSidebar({
                 <Icon size={17} aria-hidden="true" />
                 {item.label}
                 {showBadge ? (
-                  <span className="sidebar-badge" aria-label={`${criticalAlerts} critical alerts`}>
-                    {criticalAlerts}
+                  <span
+                    className="sidebar-badge"
+                    aria-label={`${pendingCount} alerts awaiting response`}
+                    title={`${pendingCount} alert${pendingCount === 1 ? "" : "s"} awaiting a first response in this region`}
+                  >
+                    {pendingCount > 99 ? "99+" : pendingCount}
                   </span>
                 ) : null}
               </Link>

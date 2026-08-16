@@ -9,7 +9,7 @@ import { AuthGuard } from "@/components/auth/AuthGuard";
 import { RegionSelector } from "@/components/dashboard/RegionSelector";
 import { DashboardSidebar } from "@/components/navigation/DashboardSidebar";
 import { RegionProvider } from "@/hooks/useRegion";
-import { alertsApi, systemApi } from "@/lib/api";
+import { systemApi } from "@/lib/api";
 import { DASHBOARD_NAV } from "@/lib/constants";
 
 const TITLES: Record<string, string> = {
@@ -33,12 +33,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     refetchInterval: 60_000,
   });
 
-  const { data: alerts } = useQuery({
-    queryKey: ["alerts", "critical-count"],
-    queryFn: () => alertsApi.list({ severity: "CRITICAL", status: "NEW", limit: 50 }),
-    retry: false,
-  });
-
   const title = TITLES[pathname] ?? "Intelligence";
   const aiProvider = health?.ai_provider ?? "—";
   const isDemoAi = aiProvider.toUpperCase().includes("DEMO");
@@ -47,11 +41,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <AuthGuard>
       <RegionProvider>
       <div className="dashboard-shell">
-        <DashboardSidebar
-          open={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          criticalAlerts={alerts?.length}
-        />
+        <DashboardSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
         <div className="dashboard-main">
           <header className="dashboard-topbar">
