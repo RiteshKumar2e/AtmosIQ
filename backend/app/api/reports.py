@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.api.deps import get_current_user, get_optional_user
 from app.database.session import get_db
@@ -131,7 +131,13 @@ def list_reports(
 
     total = db.scalar(count_query) or 0
     rows = db.scalars(
-        query.order_by(CitizenReport.created_at.desc())
+        query.options(
+            # `serialise_report` walks both relationships; eager loading turns
+            # 2 round trips per row into 2 for the whole page.
+            selectinload(CitizenReport.user),
+            selectinload(CitizenReport.assessment),
+        )
+        .order_by(CitizenReport.created_at.desc())
         .offset((page - 1) * page_size)
         .limit(page_size)
     ).all()

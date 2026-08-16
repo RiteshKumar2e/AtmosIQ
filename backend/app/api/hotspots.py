@@ -7,8 +7,8 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session, aliased, selectinload
 
 from app.api.deps import resolve_region
 from app.database.session import get_db
@@ -120,9 +120,15 @@ async def map_layers(
         .limit(120)
     ).all()
 
+    # `serialise_report` reads `report.user` and `report.assessment`; without
+    # eager loading each report costs two extra round trips.
     reports = db.scalars(
         select(CitizenReport)
         .where(CitizenReport.region_code == region.region_code)
+        .options(
+            selectinload(CitizenReport.user),
+            selectinload(CitizenReport.assessment),
+        )
         .order_by(CitizenReport.created_at.desc())
         .limit(80)
     ).all()
@@ -131,15 +137,10 @@ async def map_layers(
         select(MonitoringStation).where(MonitoringStation.region_code == region.region_code)
     ).all()
 
-    station_payload: List[MonitoringStationOut] = []
-    for station in stations:
-        reading = db.scalars(
-            select(SensorReading)
-            .where(SensorReading.station_id == station.id)
-            .order_by(SensorReading.timestamp.desc())
-            .limit(1)
-        ).first()
-        station_payload.append(serialise_station(station, reading))
+    latest_readings = _latest_readings_by_station(db, [s.id for s in stations])
+    station_payload: List[MonitoringStationOut] = [
+        serialise_station(station, latest_readings.get(station.id)) for station in stations
+    ]
 
     weather = await weather_service.get_weather(region.center_lat, region.center_lon)
     wind = WindOut(
@@ -162,6 +163,39 @@ async def map_layers(
         corridors=_build_corridors(hotspots, weather),
         generated_at=datetime.now(timezone.utc),
     )
+
+
+def _latest_readings_by_station(
+    db: Session, station_ids: List[int]
+) -> Dict[int, SensorReading]:
+    """Most recent reading for each station, in one query.
+
+    Querying per station is one network round trip each, which is the dominant
+    cost of the map endpoint against a remote database. A window function ranks
+    every station's readings server-side and returns only the newest.
+    """
+    if not station_ids:
+        return {}
+
+    ranked = (
+        select(
+            SensorReading,
+            func.row_number()
+            .over(
+                partition_by=SensorReading.station_id,
+                order_by=SensorReading.timestamp.desc(),
+            )
+            .label("rank"),
+        )
+        .where(SensorReading.station_id.in_(station_ids))
+        .subquery()
+    )
+
+    rows = db.scalars(
+        select(aliased(SensorReading, ranked)).where(ranked.c.rank == 1)
+    ).all()
+
+    return {reading.station_id: reading for reading in rows}
 
 
 def _build_corridors(hotspots: List[Hotspot], weather: Dict[str, Any]) -> List[Dict[str, Any]]:

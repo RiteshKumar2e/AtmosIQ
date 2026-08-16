@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.alerts import serialise_alert
@@ -289,30 +289,53 @@ def _source_breakdown(db: Session, region_code: str) -> List[SourceBreakdown]:
     ]
 
 
+#: Regions shown in the distribution chart. Every configured region is
+#: aggregated, but a 40-row card is unreadable — the busiest are what matter.
+_DISTRIBUTION_LIMIT = 12
+
+
 def _distribution(db: Session) -> List[RegionDistribution]:
-    """Hotspot load by region — the cross-border comparison view."""
+    """Hotspot load by region — the cross-region comparison view.
+
+    Aggregated in the database rather than per region in Python: the previous
+    loop issued two queries for every configured region, which is 80 network
+    round trips once every Indian state is a region.
+    """
     regions = db.scalars(select(Region).order_by(Region.country_code)).all()
+
+    hotspot_stats = {
+        code: (count, average or 0.0)
+        for code, count, average in db.execute(
+            select(
+                Hotspot.region_code,
+                func.count(Hotspot.id),
+                func.avg(Hotspot.risk_score),
+            ).group_by(Hotspot.region_code)
+        ).all()
+    }
+
+    report_counts = dict(
+        db.execute(
+            select(CitizenReport.region_code, func.count(CitizenReport.id))
+            .group_by(CitizenReport.region_code)
+        ).all()
+    )
+
     out: List[RegionDistribution] = []
     for region in regions:
-        hotspots = db.scalars(
-            select(Hotspot).where(Hotspot.region_code == region.region_code)
-        ).all()
-        reports = db.scalars(
-            select(CitizenReport).where(CitizenReport.region_code == region.region_code)
-        ).all()
-        avg_risk = (
-            round(sum(h.risk_score for h in hotspots) / len(hotspots), 1) if hotspots else 0.0
-        )
+        hotspot_count, avg_risk = hotspot_stats.get(region.region_code, (0, 0.0))
         out.append(
             RegionDistribution(
                 region_code=region.region_code,
                 name=f"{region.flag} {region.name}".strip(),
-                hotspots=len(hotspots),
-                avg_risk=avg_risk,
-                reports=len(reports),
+                hotspots=hotspot_count,
+                avg_risk=round(avg_risk, 1),
+                reports=report_counts.get(region.region_code, 0),
             )
         )
-    return sorted(out, key=lambda r: r.hotspots, reverse=True)
+
+    out.sort(key=lambda r: (r.hotspots, r.reports), reverse=True)
+    return out[:_DISTRIBUTION_LIMIT]
 
 
 def _participation(db: Session, region_code: str, granularity: str) -> List[TrendPoint]:

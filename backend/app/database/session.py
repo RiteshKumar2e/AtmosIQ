@@ -18,7 +18,7 @@ from typing import Generator
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
-from sqlalchemy.pool import QueuePool
+from sqlalchemy.pool import NullPool
 
 from app.config import settings
 
@@ -47,14 +47,19 @@ if _is_local_sqlite:
     # otherwise pinned to its creating thread.
     _connect_args["check_same_thread"] = False
 elif _is_remote_libsql:
-    # Turso is a network database. The libSQL dialect inherits pysqlite's
-    # default SingletonThreadPool, which serialises every request onto one
-    # connection and rejects pool sizing arguments outright — so QueuePool has
-    # to be selected explicitly. Connections are recycled below the typical
-    # 5-minute idle timeout so a dropped socket is replaced, not reused.
-    _engine_kwargs.update(
-        poolclass=QueuePool, pool_size=5, max_overflow=5, pool_recycle=280
-    )
+    # Turso is a network database reached over HTTP, and the libSQL driver
+    # applies no socket timeout. A pooled connection that has gone stale — the
+    # server idled overnight, a NAT mapping expired, the far end closed it —
+    # therefore does not raise: it blocks forever. `pool_pre_ping` cannot save
+    # us either, because the ping is issued on that same dead socket and hangs
+    # too, which is how a healthy server ends up unable to answer `SELECT 1`.
+    #
+    # NullPool opens a fresh connection per checkout and closes it after, so
+    # there is never a stale one to inherit. The extra connect costs roughly
+    # 0.5 s against a request that already spends seconds on round trips —
+    # cheap insurance against an unrecoverable hang.
+    _engine_kwargs.update(poolclass=NullPool)
+    _engine_kwargs.pop("pool_pre_ping", None)  # meaningless on a fresh connection
 
 try:
     engine = create_engine(DATABASE_URL, connect_args=_connect_args, **_engine_kwargs)

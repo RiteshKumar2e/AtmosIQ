@@ -104,13 +104,19 @@ class SQLiteDialect_libsql_https(SQLiteDialect_pysqlite):
     driver = "libsql_https"
     supports_statement_cache = SQLiteDialect_pysqlite.supports_statement_cache
 
-    # Turso is a network database: there is no local file to memory-map and no
-    # single shared connection to serialise onto.
     @classmethod
     def get_pool_class(cls, url):
-        from sqlalchemy.pool import QueuePool
+        """Never pool a remote libSQL connection.
 
-        return QueuePool
+        Inheriting pysqlite's SingletonThreadPool would serialise every request
+        onto one connection. Pooling with QueuePool is worse still: the driver
+        sets no socket timeout, so a connection that goes stale while idle
+        blocks forever instead of raising, and every later request inherits it.
+        A fresh connection per checkout is the only variant that cannot wedge.
+        """
+        from sqlalchemy.pool import NullPool
+
+        return NullPool
 
     @classmethod
     def import_dbapi(cls):
