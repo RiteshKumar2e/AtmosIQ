@@ -21,6 +21,7 @@ from app.models.models import CitizenReport, Hotspot, MonitoringStation, Region
 from app.schemas.schemas import BricsNode, BricsOverviewOut
 from app.services.forecast_service import MODEL_NAME as FORECAST_MODEL
 from app.services.risk_engine import WEIGHTS
+from app.utils.cache import cached
 
 router = APIRouter(prefix="/api/brics", tags=["BRICS Network"])
 
@@ -29,6 +30,7 @@ MODEL_VERSION = "aeroshield-risk-v1"
 
 
 @router.get("/overview", response_model=BricsOverviewOut)
+@cached(ttl=300, prefix="brics.overview")
 def brics_overview(
     db: Session = Depends(get_db),
     country_code: Optional[str] = Query(default=None, max_length=2),

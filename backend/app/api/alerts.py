@@ -13,6 +13,7 @@ from app.api.deps import require_roles
 from app.database.session import get_db
 from app.models.models import Alert, User
 from app.schemas.schemas import AlertOut, AlertUpdate
+from app.utils.cache import invalidate as invalidate_cache
 
 router = APIRouter(prefix="/api/alerts", tags=["Alerts"])
 
@@ -144,5 +145,6 @@ def update_alert(
                 alert.acknowledged_at = now
 
     db.commit()
+    invalidate_cache()
     db.refresh(alert)
     return serialise_alert(alert)

@@ -23,6 +23,7 @@ from app.schemas.schemas import (
 from app.services import gemini_service, pipeline_service
 from app.utils.files import save_upload
 from app.utils.geo import validate_coordinates
+from app.utils.cache import invalidate as invalidate_cache
 
 router = APIRouter(prefix="/api/reports", tags=["Citizen Reports"])
 
@@ -222,6 +223,7 @@ async def create_report(
     )
     db.add(report)
     db.commit()
+    invalidate_cache()
     db.refresh(report)
 
     if not analyze:

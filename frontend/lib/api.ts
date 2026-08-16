@@ -66,10 +66,24 @@ interface RequestOptions extends Omit<RequestInit, "body"> {
   /** Attach the bearer token when a session exists. Defaults to true. */
   auth?: boolean;
   query?: Record<string, string | number | boolean | undefined | null>;
+  /** Abort after this many milliseconds. Defaults to `DEFAULT_TIMEOUT_MS`. */
+  timeoutMs?: number;
 }
 
+/**
+ * A request that has not answered in this long is not going to.
+ *
+ * The database is remote, so a cold aggregate can legitimately take several
+ * seconds — but without a ceiling a stalled backend leaves the UI spinning
+ * indefinitely rather than showing its offline state.
+ */
+const DEFAULT_TIMEOUT_MS = 20_000;
+
+/** Uploads carry an image and run the AI pipeline, so they get longer. */
+const UPLOAD_TIMEOUT_MS = 90_000;
+
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { body, auth = true, query, headers, ...rest } = options;
+  const { body, auth = true, query, headers, timeoutMs, ...rest } = options;
 
   const url = new URL(`${API_URL}${path}`);
   if (query) {
@@ -92,19 +106,34 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     if (token) requestHeaders.set("Authorization", `Bearer ${token}`);
   }
 
+  const limit = timeoutMs ?? (isFormData ? UPLOAD_TIMEOUT_MS : DEFAULT_TIMEOUT_MS);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), limit);
+
   let response: Response;
   try {
     response = await fetch(url.toString(), {
       ...rest,
       headers: requestHeaders,
+      signal: controller.signal,
       body: isFormData ? (body as FormData) : body !== undefined ? JSON.stringify(body) : undefined,
     });
-  } catch {
+  } catch (error) {
+    // Distinguish "took too long" from "could not connect": they point the
+    // user at different problems.
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new ApiError(
+        408,
+        `The AtmosIQ API did not respond within ${Math.round(limit / 1000)}s. It may be starting up or under load.`,
+      );
+    }
     // Network-level failure: the backend is unreachable rather than erroring.
     throw new ApiError(
       0,
       "Cannot reach the AtmosIQ API. Confirm the backend is running on " + API_URL,
     );
+  } finally {
+    clearTimeout(timer);
   }
 
   if (response.status === 204) return undefined as T;

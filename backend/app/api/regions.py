@@ -16,11 +16,13 @@ from app.config import settings
 from app.database.session import get_db
 from app.models.models import Region
 from app.schemas.schemas import RegionListOut, RegionOut
+from app.utils.cache import cached
 
 router = APIRouter(prefix="/api/regions", tags=["Regions"])
 
 
 @router.get("", response_model=RegionListOut)
+@cached(ttl=600, prefix="regions.list")
 def list_regions(
     db: Session = Depends(get_db),
     country_code: Optional[str] = Query(

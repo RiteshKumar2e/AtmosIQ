@@ -11,11 +11,13 @@ from app.api.deps import resolve_region
 from app.database.session import get_db
 from app.schemas.schemas import ForecastOut
 from app.services import forecast_service, pipeline_service
+from app.utils.cache import cached
 
 router = APIRouter(prefix="/api/forecast", tags=["Forecast"])
 
 
 @router.get("", response_model=ForecastOut)
+@cached(ttl=120, prefix="forecast")
 async def get_forecast(
     db: Session = Depends(get_db),
     region_code: Optional[str] = Query(default=None, max_length=8),

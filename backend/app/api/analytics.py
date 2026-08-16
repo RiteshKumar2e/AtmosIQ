@@ -36,6 +36,7 @@ from app.schemas.schemas import (
     WindOut,
 )
 from app.services import gemini_service, pipeline_service
+from app.utils.cache import cached
 from app.utils.geo import haversine_km
 
 router = APIRouter(prefix="/api/analytics", tags=["Analytics"])
@@ -56,6 +57,7 @@ def _aware(value: datetime) -> datetime:
 
 
 @router.get("/overview", response_model=OverviewOut)
+@cached(ttl=60, prefix="analytics.overview")
 async def overview(
     db: Session = Depends(get_db),
     region_code: Optional[str] = Query(default=None, max_length=8),
@@ -199,6 +201,7 @@ def _hotspot_level(hotspots: List[Hotspot]) -> str:
 
 
 @router.get("/trends", response_model=TrendsOut)
+@cached(ttl=180, prefix="analytics.trends")
 def trends(
     db: Session = Depends(get_db),
     region_code: Optional[str] = Query(default=None, max_length=8),

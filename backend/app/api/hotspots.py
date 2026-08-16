@@ -20,6 +20,7 @@ from app.schemas.schemas import (
     WindOut,
 )
 from app.services import weather_service
+from app.utils.cache import cached
 from app.utils.geo import downwind_offset, haversine_km
 
 router = APIRouter(prefix="/api/hotspots", tags=["Hotspots"])
@@ -102,6 +103,7 @@ def list_hotspots(
 
 
 @router.get("/map", response_model=MapLayersOut)
+@cached(ttl=45, prefix="hotspots.map")
 async def map_layers(
     db: Session = Depends(get_db),
     region_code: Optional[str] = Query(default=None, max_length=8),

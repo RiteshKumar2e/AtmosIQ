@@ -29,6 +29,7 @@ from app.models.models import AIAssessment, Alert, CitizenReport, Hotspot, User
 from app.schemas.schemas import DemoScenarioOut, DemoScenarioStep, ForecastOut
 from app.services import forecast_service, gemini_service, pipeline_service
 from app.utils.demo_image import render_industrial_plume
+from app.utils.cache import invalidate as invalidate_cache
 
 router = APIRouter(prefix="/api/demo", tags=["Demo Scenario"])
 
@@ -113,6 +114,7 @@ async def run_scenario(
     )
     db.add(report)
     db.commit()
+    invalidate_cache()
     db.refresh(report)
 
     result = await pipeline_service.analyze_report(
@@ -250,6 +252,7 @@ def reset_scenario(
         db.delete(report)
 
     db.commit()
+    invalidate_cache()
     return {
         "detail": "Demo scenario artefacts removed",
         "reports_removed": len(reports),
