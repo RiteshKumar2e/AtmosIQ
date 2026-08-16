@@ -322,35 +322,92 @@ export default function IntelligencePage() {
 }
 
 /* -------------------------------------------------------------------------- */
+/**
+ * 270-degree gauge with the four risk bands marked on the track.
+ *
+ * A bare donut shows a value; this shows a value *in context* — where the
+ * score sits relative to the LOW/MODERATE/HIGH/CRITICAL thresholds, which is
+ * the question an officer actually asks.
+ */
 function RiskGauge({ score, level }: { score: number; level: string }) {
-  const radius = 84;
+  const radius = 82;
+  const stroke = 13;
+  const sweep = 270; // degrees of arc; the 90-degree gap sits at the bottom
   const circumference = 2 * Math.PI * radius;
+  const arcLength = circumference * (sweep / 360);
+
   const clamped = Math.max(0, Math.min(100, score));
-  const offset = circumference - (clamped / 100) * circumference;
+  const progress = arcLength * (clamped / 100);
+  const color = riskColor(level);
+
+  // Band boundaries at 35 / 55 / 75, matching the backend's risk bands.
+  const bands = [
+    { at: 35, label: "Moderate" },
+    { at: 55, label: "High" },
+    { at: 75, label: "Critical" },
+  ];
+
+  // Rotate so the arc starts bottom-left and sweeps clockwise.
+  const rotation = 135;
 
   return (
     <div className="risk-gauge-figure">
       <svg viewBox="0 0 200 200" aria-hidden="true">
-        <circle className="risk-gauge-track" cx="100" cy="100" r={radius} strokeWidth="14" />
-        <circle
-          className="risk-gauge-value"
-          cx="100"
-          cy="100"
-          r={radius}
-          strokeWidth="14"
-          stroke={riskColor(level)}
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-        />
+        <g transform={`rotate(${rotation} 100 100)`}>
+          {/* Track */}
+          <circle
+            className="risk-gauge-track"
+            cx="100"
+            cy="100"
+            r={radius}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={`${arcLength} ${circumference}`}
+          />
+
+          {/* Value */}
+          <circle
+            className="risk-gauge-value"
+            cx="100"
+            cy="100"
+            r={radius}
+            strokeWidth={stroke}
+            stroke={color}
+            strokeLinecap="round"
+            strokeDasharray={`${progress} ${circumference}`}
+          />
+
+          {/* Band thresholds, notched through the track */}
+          {bands.map((band) => {
+            const angle = (sweep * band.at) / 100;
+            const rad = (angle * Math.PI) / 180;
+            const inner = radius - stroke / 2 - 1;
+            const outer = radius + stroke / 2 + 1;
+            return (
+              <line
+                key={band.at}
+                x1={100 + inner * Math.cos(rad)}
+                y1={100 + inner * Math.sin(rad)}
+                x2={100 + outer * Math.cos(rad)}
+                y2={100 + outer * Math.sin(rad)}
+                stroke="var(--card)"
+                strokeWidth="2.5"
+              />
+            );
+          })}
+        </g>
       </svg>
+
       <div className="risk-gauge-center">
-        <p className="risk-gauge-score" style={{ color: riskColor(level) }}>
+        <p className="risk-gauge-score" style={{ color }}>
           {Math.round(clamped)}
         </p>
         <p className="risk-gauge-scale">out of 100</p>
       </div>
+
       <span className="sr-only">
-        Current risk score {Math.round(clamped)} out of 100, {level} band.
+        Current risk score {Math.round(clamped)} out of 100, {level} band. Thresholds are 35
+        for moderate, 55 for high and 75 for critical.
       </span>
     </div>
   );

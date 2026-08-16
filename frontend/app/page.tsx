@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { Reveal } from "@/components/landing/Reveal";
 import { ImpactSection, IntelligencePreview } from "@/components/landing/live";
 import {
   BricsVision,
@@ -21,15 +22,34 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <PublicShell>
+      {/* The hero is above the fold, so it renders immediately rather than
+          waiting on a scroll observer. */}
       <Hero />
-      <ProblemSection />
-      <SolutionSection />
-      <IntelligencePreview />
-      <FeaturesPreview />
-      <HowItWorksPreview />
-      <BricsVision />
-      <ImpactSection />
-      <FinalCta />
+
+      <Reveal>
+        <ProblemSection />
+      </Reveal>
+      <Reveal>
+        <SolutionSection />
+      </Reveal>
+      <Reveal>
+        <IntelligencePreview />
+      </Reveal>
+      <Reveal>
+        <FeaturesPreview />
+      </Reveal>
+      <Reveal>
+        <HowItWorksPreview />
+      </Reveal>
+      <Reveal>
+        <BricsVision />
+      </Reveal>
+      <Reveal>
+        <ImpactSection />
+      </Reveal>
+      <Reveal>
+        <FinalCta />
+      </Reveal>
     </PublicShell>
   );
 }

@@ -24,10 +24,11 @@
   margin-bottom: 18px;
 }
 
+/* The arc's own rotation is applied inside the SVG, so no transform here. */
 .risk-gauge-figure svg {
-  transform: rotate(-90deg);
   width: 100%;
   height: 100%;
+  overflow: visible;
 }
 
 .risk-gauge-track {
@@ -37,8 +38,7 @@
 
 .risk-gauge-value {
   fill: none;
-  stroke-linecap: round;
-  transition: stroke-dashoffset 800ms var(--ease), stroke 400ms var(--ease);
+  transition: stroke-dasharray 900ms var(--ease), stroke 400ms var(--ease);
 }
 
 .risk-gauge-center {
@@ -51,11 +51,12 @@
 }
 
 .risk-gauge-score {
-  font-size: 3rem;
-  font-weight: 700;
-  letter-spacing: -0.04em;
+  font-size: 3.25rem;
+  font-weight: 660;
+  letter-spacing: -0.05em;
   line-height: 1;
   font-variant-numeric: tabular-nums;
+  transition: color 400ms var(--ease);
 }
 
 .risk-gauge-scale {

@@ -29,19 +29,32 @@
   cursor: not-allowed;
 }
 
+/* A 1px press travel makes buttons feel physical without animating layout. */
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
 .btn-primary {
   background: var(--primary);
   color: #fff;
-  box-shadow: var(--shadow-xs);
+  /* Inner highlight on top, contact shadow below: reads as a raised key
+     control rather than a flat coloured rectangle. */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 1px 2px rgba(11, 90, 83, 0.24);
 }
 .btn-primary:hover:not(:disabled) {
   background: var(--primary-hover);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 2px 6px rgba(11, 90, 83, 0.26);
 }
 
 .btn-secondary {
   background: var(--card);
   color: var(--foreground);
   border-color: var(--border-strong);
+  box-shadow: var(--shadow-xs);
 }
 .btn-secondary:hover:not(:disabled) {
   background: var(--background-alt);
@@ -105,7 +118,7 @@
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-xs);
+  box-shadow: var(--shadow-xs), var(--ring-inset);
 }
 
 .card-padded {
@@ -122,9 +135,9 @@
 }
 
 .card-title {
-  font-size: var(--text-lg);
-  font-weight: 650;
-  letter-spacing: -0.01em;
+  font-size: var(--text-md);
+  font-weight: 620;
+  letter-spacing: -0.014em;
 }
 
 .card-subtitle {
@@ -145,8 +158,8 @@
 }
 
 .card-interactive {
-  transition: box-shadow var(--duration) var(--ease),
-    border-color var(--duration) var(--ease), transform var(--duration) var(--ease);
+  transition: box-shadow 220ms var(--ease), border-color 220ms var(--ease),
+    transform 220ms var(--ease);
 }
 .card-interactive:hover {
   box-shadow: var(--shadow-md);
@@ -171,12 +184,23 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  font-size: var(--text-xs);
-  font-weight: 700;
-  letter-spacing: 0.09em;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  background: var(--primary-soft);
+  border: 1px solid var(--primary-border);
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.075em;
   text-transform: uppercase;
   color: var(--primary);
-  margin-bottom: 14px;
+  margin-bottom: 16px;
+}
+
+/* On dark sections the pill would fight the background. */
+.section-dark .eyebrow,
+.brics-vision .eyebrow {
+  background: rgba(111, 191, 174, 0.12);
+  border-color: rgba(111, 191, 174, 0.24);
 }
 
 .section-header h2 {
@@ -370,6 +394,13 @@
   box-shadow: 0 0 0 3px var(--primary-soft);
 }
 
+/* The browser default ring is redundant once a field paints its own. */
+.input:focus-visible,
+.textarea:focus-visible,
+.select:focus-visible {
+  outline: none;
+}
+
 .input[aria-invalid="true"],
 .textarea[aria-invalid="true"],
 .select[aria-invalid="true"] {
@@ -513,16 +544,24 @@
 .table thead th {
   position: sticky;
   top: 0;
-  padding: 11px 16px;
+  z-index: 1;
+  padding: 10px 16px;
   text-align: left;
-  font-size: var(--text-xs);
-  font-weight: 700;
-  letter-spacing: 0.05em;
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--muted);
   background: var(--card-muted);
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
+}
+
+/* Numeric columns read as a column only when right-aligned. */
+.table th.is-numeric,
+.table td.is-numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .table tbody td {
@@ -531,16 +570,24 @@
   vertical-align: middle;
 }
 
+/* The first column is the row's identity, so it carries the emphasis. */
+.table tbody td:first-child {
+  color: var(--foreground);
+}
+
 .table tbody tr:last-child td {
   border-bottom: none;
 }
 
 .table tbody tr {
-  transition: background var(--duration) var(--ease);
+  transition: background var(--duration) var(--ease),
+    box-shadow var(--duration) var(--ease);
 }
 
 .table tbody tr:hover {
   background: var(--card-muted);
+  /* A left rail on hover tracks the eye across a wide row. */
+  box-shadow: inset 2px 0 0 var(--primary);
 }
 
 .table-primary-cell {
@@ -1021,6 +1068,173 @@
   border-radius: var(--radius-full);
   background: var(--background-alt);
   overflow: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   Status pages — 404 and route errors
+   -------------------------------------------------------------------------- */
+.status-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 40px 24px;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 0%, #eef4f3 0%, transparent 70%),
+    var(--background);
+}
+
+.status-page-inner {
+  width: 100%;
+  max-width: 540px;
+  text-align: center;
+}
+
+.status-page-brand {
+  margin-bottom: 36px;
+}
+
+.status-code {
+  font-family: var(--font-mono);
+  font-size: clamp(3.5rem, 12vw, 5.5rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  /* Large enough to anchor the page, quiet enough not to shout. */
+  color: transparent;
+  background: linear-gradient(180deg, var(--border-strong) 0%, var(--background-alt) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  margin-bottom: 12px;
+}
+
+.status-icon {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 22px;
+  border-radius: var(--radius-full);
+  background: var(--background-alt);
+  color: var(--muted);
+}
+
+.status-icon.is-error {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.status-title {
+  font-size: var(--text-2xl);
+  letter-spacing: -0.03em;
+  margin-bottom: 12px;
+}
+
+.status-message {
+  font-size: var(--text-md);
+  line-height: 1.7;
+  color: var(--muted-strong);
+  margin-bottom: 30px;
+}
+
+.status-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 36px;
+}
+
+.status-links {
+  padding-top: 26px;
+  border-top: 1px solid var(--border);
+}
+
+.status-links-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-xs);
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.status-links-list {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.status-links-list a {
+  display: inline-block;
+  padding: 6px 13px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  background: var(--card);
+  font-size: var(--text-sm);
+  font-weight: 550;
+  color: var(--foreground-soft);
+  transition: border-color var(--duration) var(--ease), color var(--duration) var(--ease);
+}
+
+.status-links-list a:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.status-digest {
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+.status-digest code {
+  font-family: var(--font-mono);
+  padding: 2px 7px;
+  border-radius: var(--radius-sm);
+  background: var(--background-alt);
+  border: 1px solid var(--border);
+}
+
+@media (max-width: 640px) {
+  .status-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .status-actions .btn {
+    width: 100%;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Scroll reveal
+   Sections settle into place as they enter the viewport. Purely additive:
+   without JS, or with reduced motion, everything renders fully visible.
+   -------------------------------------------------------------------------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 620ms var(--ease), transform 620ms var(--ease);
+  will-change: opacity, transform;
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }
 
 .progress-fill {
