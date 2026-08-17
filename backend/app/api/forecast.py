@@ -20,7 +20,7 @@ router = APIRouter(prefix="/api/forecast", tags=["Forecast"])
 @cached(ttl=120, prefix="forecast")
 async def get_forecast(
     db: Session = Depends(get_db),
-    region_code: Optional[str] = Query(default=None, max_length=8),
+    region_code: str | None = Query(default=None, max_length=8),
     horizon_hours: int = Query(default=6, ge=1, le=24),
 ) -> ForecastOut:
     """Forecast regional pollution risk over the requested horizon.

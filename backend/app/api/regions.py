@@ -25,7 +25,7 @@ router = APIRouter(prefix="/api/regions", tags=["Regions"])
 @cached(ttl=600, prefix="regions.list")
 def list_regions(
     db: Session = Depends(get_db),
-    country_code: Optional[str] = Query(
+    country_code: str | None = Query(
         default=None,
         max_length=3,
         description=(

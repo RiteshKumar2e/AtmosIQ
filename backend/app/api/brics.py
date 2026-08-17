@@ -33,7 +33,7 @@ MODEL_VERSION = "aeroshield-risk-v1"
 @cached(ttl=300, prefix="brics.overview")
 def brics_overview(
     db: Session = Depends(get_db),
-    country_code: Optional[str] = Query(default=None, max_length=2),
+    country_code: str | None = Query(default=None, max_length=2),
 ) -> BricsOverviewOut:
     query = select(Region).order_by(Region.country_code, Region.name)
     if country_code:

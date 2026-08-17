@@ -54,9 +54,9 @@ def serialise_alert(alert: Alert) -> AlertOut:
 @router.get("", response_model=List[AlertOut])
 def list_alerts(
     db: Session = Depends(get_db),
-    region_code: Optional[str] = Query(default=None, max_length=8),
-    severity: Optional[str] = Query(default=None, max_length=16),
-    alert_status: Optional[str] = Query(default=None, alias="status", max_length=24),
+    region_code: str | None = Query(default=None, max_length=8),
+    severity: str | None = Query(default=None, max_length=16),
+    alert_status: str | None = Query(default=None, alias="status", max_length=24),
     limit: int = Query(default=50, ge=1, le=200),
 ) -> List[AlertOut]:
     query = select(Alert)
@@ -77,7 +77,7 @@ def list_alerts(
 @router.get("/summary")
 def alert_summary(
     db: Session = Depends(get_db),
-    region_code: Optional[str] = Query(default=None, max_length=8),
+    region_code: str | None = Query(default=None, max_length=8),
 ) -> Dict[str, int]:
     query = select(Alert.status, Alert.severity, func.count()).group_by(
         Alert.status, Alert.severity

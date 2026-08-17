@@ -109,9 +109,9 @@ def report_types() -> Dict[str, List[Dict[str, str]]]:
 @router.get("", response_model=ReportListOut)
 def list_reports(
     db: Session = Depends(get_db),
-    region_code: Optional[str] = Query(default=None, max_length=8),
-    report_type: Optional[str] = Query(default=None, max_length=48),
-    report_status: Optional[str] = Query(default=None, alias="status", max_length=24),
+    region_code: str | None = Query(default=None, max_length=8),
+    report_type: str | None = Query(default=None, max_length=48),
+    report_status: str | None = Query(default=None, alias="status", max_length=24),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=12, ge=1, le=100),
 ) -> ReportListOut:

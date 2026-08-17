@@ -60,7 +60,7 @@ def _aware(value: datetime) -> datetime:
 @cached(ttl=60, prefix="analytics.overview")
 async def overview(
     db: Session = Depends(get_db),
-    region_code: Optional[str] = Query(default=None, max_length=8),
+    region_code: str | None = Query(default=None, max_length=8),
 ) -> OverviewOut:
     """Everything the operational dashboard header needs, fused live."""
     region = resolve_region(db, region_code)
@@ -204,7 +204,7 @@ def _hotspot_level(hotspots: List[Hotspot]) -> str:
 @cached(ttl=180, prefix="analytics.trends")
 def trends(
     db: Session = Depends(get_db),
-    region_code: Optional[str] = Query(default=None, max_length=8),
+    region_code: str | None = Query(default=None, max_length=8),
     granularity: str = Query(default="daily", pattern="^(daily|weekly|monthly)$"),
 ) -> TrendsOut:
     region = resolve_region(db, region_code)

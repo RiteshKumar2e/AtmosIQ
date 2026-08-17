@@ -83,8 +83,8 @@ def serialise_station(
 @router.get("", response_model=List[HotspotOut])
 def list_hotspots(
     db: Session = Depends(get_db),
-    region_code: Optional[str] = Query(default=None, max_length=8),
-    risk_level: Optional[str] = Query(default=None, max_length=16),
+    region_code: str | None = Query(default=None, max_length=8),
+    risk_level: str | None = Query(default=None, max_length=16),
     hotspot_status: str = Query(default="ACTIVE", alias="status", max_length=24),
     limit: int = Query(default=100, ge=1, le=500),
 ) -> List[HotspotOut]:
@@ -106,7 +106,7 @@ def list_hotspots(
 @cached(ttl=45, prefix="hotspots.map")
 async def map_layers(
     db: Session = Depends(get_db),
-    region_code: Optional[str] = Query(default=None, max_length=8),
+    region_code: str | None = Query(default=None, max_length=8),
 ) -> MapLayersOut:
     """Every layer the intelligence map renders, in one request.
 
